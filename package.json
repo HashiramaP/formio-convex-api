@@ -15,9 +15,9 @@
     "convex"
   ],
   "scripts": {
-    "dev": "dotenv -e .env.dev -- convex dev",
+    "dev": "convex dev",
     "deploy": "dotenv -e .env.prod -- convex deploy",
-    "gen:api": "dotenv -e .env.dev -- convex-helpers ts-api-spec --output-file api.ts",
+    "gen:api": "convex-helpers ts-api-spec --output-file api.ts",
     "typecheck": "tsc --noEmit",
     "version": "npm run gen:api && npm run typecheck && git add api.ts",
     "release:patch": "npm version patch && npm run deploy && git push --follow-tags",
