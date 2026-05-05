@@ -1,0 +1,31 @@
+{
+  "name": "@formio/convex-api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Convex backend (schema + functions) and generated API surface for all Formio frontends.",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": [
+    "index.ts",
+    "api.ts",
+    "convex"
+  ],
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "gen:api": "convex-helpers ts-api-spec --output-file api.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "convex": "^1.17.0"
+  },
+  "devDependencies": {
+    "convex": "^1.17.0",
+    "convex-helpers": "^0.1.70",
+    "typescript": "^5.6.0"
+  }
+}
