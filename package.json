@@ -15,10 +15,14 @@
     "convex"
   ],
   "scripts": {
-    "dev": "convex dev",
-    "deploy": "convex deploy",
-    "gen:api": "convex-helpers ts-api-spec --output-file api.ts",
-    "typecheck": "tsc --noEmit"
+    "dev": "dotenv -e .env.dev -- convex dev",
+    "deploy": "dotenv -e .env.prod -- convex deploy",
+    "gen:api": "dotenv -e .env.dev -- convex-helpers ts-api-spec --output-file api.ts",
+    "typecheck": "tsc --noEmit",
+    "version": "npm run gen:api && npm run typecheck && git add api.ts",
+    "release:patch": "npm version patch && npm run deploy && git push --follow-tags",
+    "release:minor": "npm version minor && npm run deploy && git push --follow-tags",
+    "release:major": "npm version major && npm run deploy && git push --follow-tags"
   },
   "peerDependencies": {
     "convex": "^1.17.0"
@@ -26,6 +30,7 @@
   "devDependencies": {
     "convex": "^1.17.0",
     "convex-helpers": "^0.1.70",
+    "dotenv-cli": "^7.4.4",
     "typescript": "^5.6.0"
   }
 }
