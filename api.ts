@@ -20,6 +20,19 @@ export type PublicApiType = {
       },
       any
     >;
+    listForFirm: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getFormStats: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listAll: FunctionReference<"query", "public", Record<string, never>, any>;
   };
   clients: {
     getClient: FunctionReference<
@@ -34,7 +47,19 @@ export type PublicApiType = {
       { legacyId: string },
       any
     >;
+    getClientForFirm: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms">; clientId: Id<"clients"> },
+      any
+    >;
     listClients: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listClientsWithActiveRevisions: FunctionReference<
       "query",
       "public",
       { firmId: Id<"firms"> },
@@ -50,17 +75,17 @@ export type PublicApiType = {
       "mutation",
       "public",
       {
-        clientId: Id<"clients">;
         firmId: Id<"firms">;
+        clientId: Id<"clients">;
         updates: {
-          email?: string;
           firstName?: string;
           lastName?: string;
-          legalDocuments?: Array<Id<"legalDocuments">>;
-          notes?: any;
+          email?: string;
           phoneNumber?: string;
+          notes?: any;
           primaryFormDefinitionId?: Id<"formDefinitions">;
           status?: string;
+          legalDocuments?: Array<Id<"legalDocuments">>;
         };
       },
       any
@@ -68,7 +93,7 @@ export type PublicApiType = {
     deleteClient: FunctionReference<
       "mutation",
       "public",
-      { clientId: Id<"clients">; firmId: Id<"firms"> },
+      { firmId: Id<"firms">; clientId: Id<"clients"> },
       any
     >;
     recordEmailConsent: FunctionReference<
@@ -107,6 +132,42 @@ export type PublicApiType = {
       { submissionId: Id<"submissions"> },
       any
     >;
+    insertDashboardFeedback: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        title: string;
+        type: string;
+        email?: string;
+        message?: string;
+      },
+      any
+    >;
+    insertMonthlyFeedback: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        rating: number;
+        formCount: number;
+        selectedOptions?: Array<string>;
+        otherFeedback?: string;
+      },
+      any
+    >;
+    listAllFeedback: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getFeedbackStats: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
   };
   firms: {
     getFirmDisplayName: FunctionReference<
@@ -133,6 +194,131 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
+    getCredits: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    decrementCredits: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getSubscriptionInfo: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getEmailSettings: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    updateEmailSettings: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        settings: {
+          generalNotificationEmail?: string;
+          physicalMailingAddress?: string;
+          remindersEnabled: boolean;
+          reminderCadence: {
+            firstAfterDays: number;
+            repeatEveryDays: number;
+            maxReminders: number;
+          };
+        };
+      },
+      any
+    >;
+    getEmailOverrides: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    upsertEmailOverride: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        formDefinitionId: Id<"formDefinitions">;
+        email: string;
+      },
+      any
+    >;
+    deleteEmailOverride: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; formDefinitionId: Id<"formDefinitions"> },
+      any
+    >;
+  };
+  formDefinitions: {
+    listGlobalForms: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listCustomForms: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getFirmBaseForm: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listFormsForSendFlow: FunctionReference<
+      "query",
+      "public",
+      { firmId?: Id<"firms"> },
+      any
+    >;
+    listFormsForFirm: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    createBlankForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        name: string;
+        category: string;
+        isBaseForm?: boolean;
+      },
+      any
+    >;
+    renameForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions">; name: string },
+      any
+    >;
+    deleteForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions"> },
+      any
+    >;
+    deleteBaseForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions"> },
+      any
+    >;
   };
   legalDocuments: {
     getLegalDocumentsByIds: FunctionReference<
@@ -157,6 +343,12 @@ export type PublicApiType = {
       "query",
       "public",
       { clientId: Id<"clients"> },
+      any
+    >;
+    getGeneratedDocUrl: FunctionReference<
+      "query",
+      "public",
+      { storageId: Id<"_storage"> },
       any
     >;
     deleteGeneratedDoc: FunctionReference<
@@ -190,6 +382,20 @@ export type PublicApiType = {
       { externalIds: Array<string> },
       any
     >;
+    getDistinctSections: FunctionReference<
+      "query",
+      "public",
+      { formDefinitionId: Id<"formDefinitions"> },
+      any
+    >;
+  };
+  questionTemplates: {
+    listTemplates: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
   };
   submissionDocuments: {
     generateUploadUrl: FunctionReference<"mutation", "public", any, any>;
@@ -202,6 +408,24 @@ export type PublicApiType = {
         storageId: Id<"_storage">;
         submissionId: Id<"submissions">;
       },
+      any
+    >;
+    listDocuments: FunctionReference<
+      "query",
+      "public",
+      { submissionId: Id<"submissions"> },
+      any
+    >;
+    deleteDocument: FunctionReference<
+      "mutation",
+      "public",
+      { documentId: Id<"submissionDocuments"> },
+      any
+    >;
+    getDocumentUrl: FunctionReference<
+      "query",
+      "public",
+      { storageId: Id<"_storage"> },
       any
     >;
   };
@@ -252,6 +476,33 @@ export type PublicApiType = {
       { startedAt?: string; submissionId: Id<"submissions"> },
       any
     >;
+    listClientSubmissions: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms">; clientId: Id<"clients"> },
+      any
+    >;
+    updateSubmissionFromDashboard: FunctionReference<
+      "mutation",
+      "public",
+      {
+        submissionId: Id<"submissions">;
+        updates: {
+          status?: string;
+          answers?: any;
+          metadata?: any;
+          skippedSections?: any;
+          title?: string;
+        };
+      },
+      any
+    >;
+    deleteSubmission: FunctionReference<
+      "mutation",
+      "public",
+      { submissionId: Id<"submissions"> },
+      any
+    >;
     checkGroupCompletion: FunctionReference<
       "query",
       "public",
@@ -280,6 +531,79 @@ export type PublicApiType = {
       "mutation",
       "public",
       { supplementId: Id<"supplementRequests">; translatedValues?: any },
+      any
+    >;
+    createSupplementRequest: FunctionReference<
+      "mutation",
+      "public",
+      {
+        submissionId: Id<"submissions">;
+        clientId: Id<"clients">;
+        firmId: Id<"firms">;
+        requestedSections: Array<string>;
+        requestedQuestions: Array<string>;
+      },
+      any
+    >;
+    listForSubmission: FunctionReference<
+      "query",
+      "public",
+      { submissionId: Id<"submissions"> },
+      any
+    >;
+    deleteSupplementRequest: FunctionReference<
+      "mutation",
+      "public",
+      {
+        supplementId: Id<"supplementRequests">;
+        removeAnswers?: boolean;
+      },
+      any
+    >;
+  };
+  uploadedForms: {
+    insertUploadedForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        name?: string;
+        formType?: string;
+        status: string;
+        batchId?: string;
+        legalDocumentName?: string;
+      },
+      any
+    >;
+    listUploadedForms: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listActiveUploads: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    updateUploadStatus: FunctionReference<
+      "mutation",
+      "public",
+      {
+        id: Id<"uploadedForms">;
+        updates: {
+          status?: string;
+          error?: string;
+          storageId?: Id<"_storage">;
+        };
+      },
+      any
+    >;
+    deleteBatch: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; batchId: string },
       any
     >;
   };

@@ -181,6 +181,52 @@ export const completeSubmission = mutation({
   },
 });
 
+export const listClientSubmissions = query({
+  args: { firmId: v.id("firms"), clientId: v.id("clients") },
+  handler: async (ctx, { firmId, clientId }) => {
+    const submissions = await ctx.db
+      .query("submissions")
+      .withIndex("by_client", (q) => q.eq("clientId", clientId))
+      .collect();
+    const filtered = submissions.filter((s) => s.firmId === firmId);
+
+    return await Promise.all(
+      filtered.map(async (s) => {
+        const formDef = s.formDefinitionId
+          ? await ctx.db.get(s.formDefinitionId)
+          : null;
+        return {
+          ...s,
+          formDefinitionName: formDef?.name ?? null,
+        };
+      }),
+    );
+  },
+});
+
+export const updateSubmissionFromDashboard = mutation({
+  args: {
+    submissionId: v.id("submissions"),
+    updates: v.object({
+      status: v.optional(v.string()),
+      answers: v.optional(v.any()),
+      metadata: v.optional(v.any()),
+      skippedSections: v.optional(v.any()),
+      title: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, { submissionId, updates }) => {
+    await ctx.db.patch(submissionId, updates);
+  },
+});
+
+export const deleteSubmission = mutation({
+  args: { submissionId: v.id("submissions") },
+  handler: async (ctx, { submissionId }) => {
+    await ctx.db.delete(submissionId);
+  },
+});
+
 export const checkGroupCompletion = query({
   args: { submissionId: v.id("submissions") },
   handler: async (ctx, { submissionId }) => {

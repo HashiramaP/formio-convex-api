@@ -68,6 +68,68 @@ export const getFormQuestions = query({
   },
 });
 
+export const getDistinctSections = query({
+  args: { formDefinitionId: v.id("formDefinitions") },
+  handler: async (ctx, { formDefinitionId }) => {
+    const formDef = await ctx.db.get(formDefinitionId);
+    if (!formDef) {
+      return { baseSections: [], demandeSections: [] };
+    }
+
+    const ownFqs = await ctx.db
+      .query("formQuestions")
+      .withIndex("by_formDefinition", (q) =>
+        q.eq("formDefinitionId", formDefinitionId),
+      )
+      .collect();
+    ownFqs.sort((a, b) => a.orderIndex - b.orderIndex);
+
+    const uniqueSections = (rows: typeof ownFqs) =>
+      Array.from(
+        new Set(rows.map((r) => r.section).filter((s): s is string => !!s)),
+      );
+
+    if (formDef.isSelfContained && !formDef.baseFormId) {
+      return {
+        baseSections: [],
+        demandeSections: uniqueSections(ownFqs),
+      };
+    }
+
+    let baseFormId = formDef.baseFormId;
+    if (!baseFormId) {
+      const baseForms = await ctx.db
+        .query("formDefinitions")
+        .filter((q) => q.eq(q.field("isBaseForm"), true))
+        .collect();
+      const baseForm =
+        baseForms.find((f) => f.firmId === formDef.firmId) ??
+        baseForms.find((f) => !f.firmId);
+      baseFormId = baseForm?._id;
+    }
+
+    if (!baseFormId) {
+      return {
+        baseSections: [],
+        demandeSections: uniqueSections(ownFqs),
+      };
+    }
+
+    const baseFqs = await ctx.db
+      .query("formQuestions")
+      .withIndex("by_formDefinition", (q) =>
+        q.eq("formDefinitionId", baseFormId),
+      )
+      .collect();
+    baseFqs.sort((a, b) => a.orderIndex - b.orderIndex);
+
+    return {
+      baseSections: uniqueSections(baseFqs),
+      demandeSections: uniqueSections(ownFqs),
+    };
+  },
+});
+
 export const getQuestionsByExternalIds = query({
   args: { externalIds: v.array(v.string()) },
   handler: async (ctx, { externalIds }) => {

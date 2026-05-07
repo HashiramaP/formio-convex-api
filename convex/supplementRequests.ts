@@ -61,6 +61,102 @@ export const saveSupplementAnswer = mutation({
   },
 });
 
+export const createSupplementRequest = mutation({
+  args: {
+    submissionId: v.id("submissions"),
+    clientId: v.id("clients"),
+    firmId: v.id("firms"),
+    requestedSections: v.array(v.string()),
+    requestedQuestions: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("supplementRequests", {
+      ...args,
+      status: "pending",
+      answers: {},
+      metadata: { created_at: new Date().toISOString() },
+    });
+    // Move client to "in_progress"
+    await ctx.db.patch(args.clientId, { status: "in_progress" });
+    return id;
+  },
+});
+
+export const listForSubmission = query({
+  args: { submissionId: v.id("submissions") },
+  handler: async (ctx, { submissionId }) => {
+    const requests = await ctx.db
+      .query("supplementRequests")
+      .withIndex("by_submission", (q) => q.eq("submissionId", submissionId))
+      .collect();
+    return requests.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+export const deleteSupplementRequest = mutation({
+  args: {
+    supplementId: v.id("supplementRequests"),
+    removeAnswers: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { supplementId, removeAnswers }) => {
+    const supplement = await ctx.db.get(supplementId);
+    if (!supplement) return;
+
+    const submission = await ctx.db.get(supplement.submissionId);
+    if (submission) {
+      const supplementAnswers =
+        (supplement.answers as Record<string, unknown>) ?? {};
+      const answerKeys = Object.keys(supplementAnswers);
+
+      const currentAnswers =
+        (submission.answers as Record<string, unknown>) ?? {};
+      const currentSkipped =
+        (submission.skippedSections as string[] | null) ?? [];
+      const requestedSections = supplement.requestedSections ?? [];
+
+      if (removeAnswers && answerKeys.length > 0) {
+        const cleaned = { ...currentAnswers };
+        for (const key of answerKeys) {
+          delete cleaned[key];
+        }
+        const newSkipped = Array.from(
+          new Set([...currentSkipped, ...requestedSections]),
+        );
+        await ctx.db.patch(submission._id, {
+          answers: cleaned,
+          skippedSections: newSkipped,
+        });
+      } else if (!removeAnswers && answerKeys.length > 0) {
+        const merged = { ...currentAnswers, ...supplementAnswers };
+        const newSkipped = currentSkipped.filter(
+          (s) => !requestedSections.includes(s),
+        );
+        await ctx.db.patch(submission._id, {
+          answers: merged,
+          skippedSections: newSkipped.length > 0 ? newSkipped : undefined,
+        });
+      }
+    }
+
+    await ctx.db.delete(supplementId);
+
+    // Restore client status if no remaining active supplements
+    const clientId = supplement.clientId;
+    const remaining = await ctx.db
+      .query("supplementRequests")
+      .withIndex("by_firm_status", (q) => q.eq("firmId", supplement.firmId))
+      .collect();
+    const activeForClient = remaining.filter(
+      (r) =>
+        r.clientId === clientId &&
+        (r.status === "pending" || r.status === "in_progress"),
+    );
+    if (activeForClient.length === 0) {
+      await ctx.db.patch(clientId, { status: "submitted" });
+    }
+  },
+});
+
 export const completeSupplementSubmission = mutation({
   args: {
     supplementId: v.id("supplementRequests"),

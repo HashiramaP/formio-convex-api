@@ -72,6 +72,37 @@ export const listClients = query({
   },
 });
 
+export const getClientForFirm = query({
+  args: { firmId: v.id("firms"), clientId: v.id("clients") },
+  handler: async (ctx, { firmId, clientId }) => {
+    const client = await ctx.db.get(clientId);
+    if (!client || client.firmId !== firmId) return null;
+
+    let formDefinitionName: string | undefined;
+    if (client.primaryFormDefinitionId) {
+      const formDef = await ctx.db.get(client.primaryFormDefinitionId);
+      formDefinitionName = formDef?.name ?? undefined;
+    }
+
+    return { ...client, formDefinitionName };
+  },
+});
+
+export const listClientsWithActiveRevisions = query({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    const supplements = await ctx.db
+      .query("supplementRequests")
+      .withIndex("by_firm_status", (q) => q.eq("firmId", firmId))
+      .collect();
+
+    const active = supplements.filter(
+      (s) => s.status === "pending" || s.status === "in_progress",
+    );
+    return Array.from(new Set(active.map((s) => s.clientId as string)));
+  },
+});
+
 export const insertClient = mutation({
   args: {
     firmId: v.id("firms"),

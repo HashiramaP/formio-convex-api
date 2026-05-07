@@ -58,6 +58,13 @@ export const listGeneratedDocs = query({
   },
 });
 
+export const getGeneratedDocUrl = query({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, { storageId }) => {
+    return await ctx.storage.getUrl(storageId);
+  },
+});
+
 export const deleteGeneratedDoc = mutation({
   args: {
     clientId: v.id("clients"),
