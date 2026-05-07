@@ -34,6 +34,43 @@ export type PublicApiType = {
       { legacyId: string },
       any
     >;
+    listClients: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    insertClient: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; firstName: string; lastName: string },
+      any
+    >;
+    updateClient: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        clientId: Id<"clients">;
+        updates: {
+          firstName?: string;
+          lastName?: string;
+          email?: string;
+          phoneNumber?: string;
+          notes?: any;
+          primaryFormDefinitionId?: Id<"formDefinitions">;
+          status?: string;
+          legalDocuments?: Array<Id<"legalDocuments">>;
+        };
+      },
+      any
+    >;
+    deleteClient: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; clientId: Id<"clients"> },
+      any
+    >;
     recordEmailConsent: FunctionReference<
       "mutation",
       "public",
@@ -78,12 +115,54 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
+    getFirmByWorkosUserId: FunctionReference<
+      "query",
+      "public",
+      { workosUserId: string },
+      any
+    >;
+    getApiKey: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    generateApiKey: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
   };
   legalDocuments: {
     getLegalDocumentsByIds: FunctionReference<
       "query",
       "public",
       { ids: Array<Id<"legalDocuments">> },
+      any
+    >;
+    listLegalDocuments: FunctionReference<
+      "query",
+      "public",
+      { language?: string },
+      any
+    >;
+    listGeneratedDocsForClients: FunctionReference<
+      "query",
+      "public",
+      { clientIds: Array<Id<"clients">> },
+      any
+    >;
+    listGeneratedDocs: FunctionReference<
+      "query",
+      "public",
+      { clientId: Id<"clients"> },
+      any
+    >;
+    deleteGeneratedDoc: FunctionReference<
+      "mutation",
+      "public",
+      { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
     upsertGeneratedLegalDoc: FunctionReference<
