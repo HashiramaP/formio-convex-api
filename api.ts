@@ -4,15 +4,5 @@ import { type GenericId as Id } from "convex/values";
 export const api: PublicApiType = anyApi as unknown as PublicApiType;
 export const internal: InternalApiType = anyApi as unknown as InternalApiType;
 
-export type PublicApiType = {
-  messages: {
-    list: FunctionReference<"query", "public", Record<string, never>, any>;
-    send: FunctionReference<
-      "mutation",
-      "public",
-      { author: string; body: string },
-      any
-    >;
-  };
-};
+export type PublicApiType = {};
 export type InternalApiType = {};
