@@ -40,9 +40,11 @@ export default defineSchema({
     legalDocuments: v.optional(v.array(v.id("legalDocuments"))),
     emailConsentAt: v.optional(v.number()),
     emailUnsubscribedAt: v.optional(v.number()),
+    legacyId: v.optional(v.string()),
   })
     .index("by_firm", ["firmId"])
-    .index("by_firm_status", ["firmId", "status"]),
+    .index("by_firm_status", ["firmId", "status"])
+    .index("by_legacyId", ["legacyId"]),
 
   submissions: defineTable({
     firmId: v.id("firms"),

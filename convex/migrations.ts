@@ -487,6 +487,50 @@ export const insertErrorLogs = internalMutation({
   },
 });
 
+export const getFirms = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const firms = await ctx.db.query("firms").collect();
+    return firms.map((f) => ({
+      _id: f._id,
+      workosUserId: f.workosUserId,
+    }));
+  },
+});
+
+export const getClients = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const clients = await ctx.db.query("clients").collect();
+    return clients.map((c) => ({
+      _id: c._id,
+      firmId: c.firmId,
+      email: c.email,
+      firstName: c.firstName,
+      lastName: c.lastName,
+    }));
+  },
+});
+
+export const backfillLegacyClientIds = internalMutation({
+  args: {
+    mappings: v.array(
+      v.object({
+        convexClientId: v.string(),
+        supabaseUuid: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, { mappings }) => {
+    let updated = 0;
+    for (const { convexClientId, supabaseUuid } of mappings) {
+      await ctx.db.patch(convexClientId as any, { legacyId: supabaseUuid });
+      updated++;
+    }
+    return { updated };
+  },
+});
+
 export const clearAll = internalMutation({
   args: {},
   handler: async (ctx) => {

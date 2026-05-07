@@ -28,6 +28,12 @@ export type PublicApiType = {
       { clientId: Id<"clients"> },
       any
     >;
+    getClientByLegacyId: FunctionReference<
+      "query",
+      "public",
+      { legacyId: string },
+      any
+    >;
     recordEmailConsent: FunctionReference<
       "mutation",
       "public",
