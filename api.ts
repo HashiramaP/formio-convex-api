@@ -50,17 +50,17 @@ export type PublicApiType = {
       "mutation",
       "public",
       {
-        firmId: Id<"firms">;
         clientId: Id<"clients">;
+        firmId: Id<"firms">;
         updates: {
+          email?: string;
           firstName?: string;
           lastName?: string;
-          email?: string;
-          phoneNumber?: string;
+          legalDocuments?: Array<Id<"legalDocuments">>;
           notes?: any;
+          phoneNumber?: string;
           primaryFormDefinitionId?: Id<"formDefinitions">;
           status?: string;
-          legalDocuments?: Array<Id<"legalDocuments">>;
         };
       },
       any
@@ -68,7 +68,7 @@ export type PublicApiType = {
     deleteClient: FunctionReference<
       "mutation",
       "public",
-      { firmId: Id<"firms">; clientId: Id<"clients"> },
+      { clientId: Id<"clients">; firmId: Id<"firms"> },
       any
     >;
     recordEmailConsent: FunctionReference<
