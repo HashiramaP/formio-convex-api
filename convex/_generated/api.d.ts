@@ -8,7 +8,17 @@
  * @module
  */
 
+import type * as aiUsageLogs from "../aiUsageLogs.js";
+import type * as clients from "../clients.js";
+import type * as errorLogs from "../errorLogs.js";
+import type * as feedback from "../feedback.js";
+import type * as firms from "../firms.js";
+import type * as legalDocuments from "../legalDocuments.js";
 import type * as migrations from "../migrations.js";
+import type * as questions from "../questions.js";
+import type * as submissionDocuments from "../submissionDocuments.js";
+import type * as submissions from "../submissions.js";
+import type * as supplementRequests from "../supplementRequests.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +27,17 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  aiUsageLogs: typeof aiUsageLogs;
+  clients: typeof clients;
+  errorLogs: typeof errorLogs;
+  feedback: typeof feedback;
+  firms: typeof firms;
+  legalDocuments: typeof legalDocuments;
   migrations: typeof migrations;
+  questions: typeof questions;
+  submissionDocuments: typeof submissionDocuments;
+  submissions: typeof submissions;
+  supplementRequests: typeof supplementRequests;
 }>;
 
 /**
