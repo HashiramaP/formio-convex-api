@@ -332,20 +332,20 @@ export type PublicApiType = {
       "public",
       {
         questions: Array<{
+          example?: string;
           externalId: string;
+          firmId?: Id<"firms">;
+          help?: string;
+          indication?: string;
+          isRequired?: boolean;
           label: string;
+          multiEntryFields?: any;
+          options?: any;
+          placeholder?: string;
           shortLabel?: string;
           type: string;
-          options?: any;
-          isRequired?: boolean;
-          multiEntryFields?: any;
-          indication?: string;
-          help?: string;
-          placeholder?: string;
-          example?: string;
-          whyImportantReason?: string;
           whyImportantConsequence?: string;
-          firmId?: Id<"firms">;
+          whyImportantReason?: string;
         }>;
       },
       any
@@ -356,13 +356,13 @@ export type PublicApiType = {
       {
         formDefinitionId: Id<"formDefinitions">;
         rows: Array<{
-          questionKey: string;
-          orderIndex: number;
-          section?: string;
-          sectionTranslations?: any;
           dependsOn?: any;
           labelOverride?: string;
+          orderIndex: number;
+          questionKey: string;
           requiredOverride?: boolean;
+          section?: string;
+          sectionTranslations?: any;
         }>;
       },
       any
@@ -548,12 +548,6 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
-    getGlobalBaseForm: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
     listFormsForSendFlow: FunctionReference<
       "query",
       "public",
@@ -583,19 +577,31 @@ export type PublicApiType = {
       { formId: Id<"formDefinitions">; name: string },
       any
     >;
+    deleteForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions"> },
+      any
+    >;
+    getGlobalBaseForm: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
     updateFormDefinition: FunctionReference<
       "mutation",
       "public",
       {
         formId: Id<"formDefinitions">;
         updates: {
-          name?: string;
-          description?: string;
-          category?: string;
-          isBaseForm?: boolean;
           baseFormId?: Id<"formDefinitions">;
+          category?: string;
+          description?: string;
           excludedBaseSections?: Array<string>;
+          isBaseForm?: boolean;
           isSelfContained?: boolean;
+          name?: string;
         };
       },
       any
@@ -604,8 +610,8 @@ export type PublicApiType = {
       "mutation",
       "public",
       {
-        customFormId: Id<"formDefinitions">;
         baseFormId?: Id<"formDefinitions">;
+        customFormId: Id<"formDefinitions">;
       },
       any
     >;
@@ -622,17 +628,11 @@ export type PublicApiType = {
       "mutation",
       "public",
       {
-        sourceFormId: Id<"formDefinitions">;
         firmId: Id<"firms">;
         isBaseForm?: boolean;
         name?: string;
+        sourceFormId: Id<"formDefinitions">;
       },
-      any
-    >;
-    deleteForm: FunctionReference<
-      "mutation",
-      "public",
-      { formId: Id<"formDefinitions"> },
       any
     >;
     deleteBaseForm: FunctionReference<
