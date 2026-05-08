@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
 export const getFormQuestions = query({
@@ -142,5 +142,86 @@ export const getQuestionsByExternalIds = query({
       ),
     );
     return questions.filter(Boolean);
+  },
+});
+
+/**
+ * Bulk upsert questions by externalId. Used by the form editor to:
+ * - Insert new template-based questions (id starts with "tpl_")
+ * - Update existing questions (label, type, options, etc.)
+ */
+export const upsertQuestionsBatch = mutation({
+  args: {
+    questions: v.array(
+      v.object({
+        externalId: v.string(),
+        label: v.string(),
+        shortLabel: v.optional(v.string()),
+        type: v.string(),
+        options: v.optional(v.any()),
+        isRequired: v.optional(v.boolean()),
+        multiEntryFields: v.optional(v.any()),
+        indication: v.optional(v.string()),
+        help: v.optional(v.string()),
+        placeholder: v.optional(v.string()),
+        example: v.optional(v.string()),
+        whyImportantReason: v.optional(v.string()),
+        whyImportantConsequence: v.optional(v.string()),
+        firmId: v.optional(v.id("firms")),
+      }),
+    ),
+  },
+  handler: async (ctx, { questions }) => {
+    for (const q of questions) {
+      const existing = await ctx.db
+        .query("questions")
+        .withIndex("by_externalId", (idx) => idx.eq("externalId", q.externalId))
+        .unique();
+      if (existing) {
+        const { externalId: _ignored, ...updates } = q;
+        await ctx.db.patch(existing._id, updates);
+      } else {
+        await ctx.db.insert("questions", q);
+      }
+    }
+  },
+});
+
+/**
+ * Atomically replace all formQuestions for a form definition.
+ * Used by the form editor: delete-all-then-insert-all is the simplest
+ * way to handle reorders, section moves, and removals in one save.
+ */
+export const replaceFormQuestions = mutation({
+  args: {
+    formDefinitionId: v.id("formDefinitions"),
+    rows: v.array(
+      v.object({
+        questionKey: v.string(),
+        orderIndex: v.number(),
+        section: v.optional(v.string()),
+        sectionTranslations: v.optional(v.any()),
+        dependsOn: v.optional(v.any()),
+        labelOverride: v.optional(v.string()),
+        requiredOverride: v.optional(v.boolean()),
+      }),
+    ),
+  },
+  handler: async (ctx, { formDefinitionId, rows }) => {
+    const existing = await ctx.db
+      .query("formQuestions")
+      .withIndex("by_formDefinition", (q) =>
+        q.eq("formDefinitionId", formDefinitionId),
+      )
+      .collect();
+    for (const fq of existing) {
+      await ctx.db.delete(fq._id);
+    }
+    for (const row of rows) {
+      await ctx.db.insert("formQuestions", {
+        formDefinitionId,
+        ...row,
+      });
+    }
   },
 });

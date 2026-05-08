@@ -327,6 +327,46 @@ export type PublicApiType = {
       { externalIds: Array<string> },
       any
     >;
+    upsertQuestionsBatch: FunctionReference<
+      "mutation",
+      "public",
+      {
+        questions: Array<{
+          externalId: string;
+          label: string;
+          shortLabel?: string;
+          type: string;
+          options?: any;
+          isRequired?: boolean;
+          multiEntryFields?: any;
+          indication?: string;
+          help?: string;
+          placeholder?: string;
+          example?: string;
+          whyImportantReason?: string;
+          whyImportantConsequence?: string;
+          firmId?: Id<"firms">;
+        }>;
+      },
+      any
+    >;
+    replaceFormQuestions: FunctionReference<
+      "mutation",
+      "public",
+      {
+        formDefinitionId: Id<"formDefinitions">;
+        rows: Array<{
+          questionKey: string;
+          orderIndex: number;
+          section?: string;
+          sectionTranslations?: any;
+          dependsOn?: any;
+          labelOverride?: string;
+          requiredOverride?: boolean;
+        }>;
+      },
+      any
+    >;
   };
   submissionDocuments: {
     generateUploadUrl: FunctionReference<"mutation", "public", any, any>;
@@ -508,6 +548,12 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
+    getGlobalBaseForm: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
     listFormsForSendFlow: FunctionReference<
       "query",
       "public",
@@ -535,6 +581,52 @@ export type PublicApiType = {
       "mutation",
       "public",
       { formId: Id<"formDefinitions">; name: string },
+      any
+    >;
+    updateFormDefinition: FunctionReference<
+      "mutation",
+      "public",
+      {
+        formId: Id<"formDefinitions">;
+        updates: {
+          name?: string;
+          description?: string;
+          category?: string;
+          isBaseForm?: boolean;
+          baseFormId?: Id<"formDefinitions">;
+          excludedBaseSections?: Array<string>;
+          isSelfContained?: boolean;
+        };
+      },
+      any
+    >;
+    linkBaseForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        customFormId: Id<"formDefinitions">;
+        baseFormId?: Id<"formDefinitions">;
+      },
+      any
+    >;
+    setBaseSectionToggles: FunctionReference<
+      "mutation",
+      "public",
+      {
+        customFormId: Id<"formDefinitions">;
+        excludedBaseSections: Array<string>;
+      },
+      any
+    >;
+    forkForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        sourceFormId: Id<"formDefinitions">;
+        firmId: Id<"firms">;
+        isBaseForm?: boolean;
+        name?: string;
+      },
       any
     >;
     deleteForm: FunctionReference<
