@@ -14,6 +14,7 @@ import type * as errorLogs from "../errorLogs.js";
 import type * as feedback from "../feedback.js";
 import type * as firms from "../firms.js";
 import type * as formDefinitions from "../formDefinitions.js";
+import type * as http from "../http.js";
 import type * as legalDocuments from "../legalDocuments.js";
 import type * as migrations from "../migrations.js";
 import type * as questionTemplates from "../questionTemplates.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   feedback: typeof feedback;
   firms: typeof firms;
   formDefinitions: typeof formDefinitions;
+  http: typeof http;
   legalDocuments: typeof legalDocuments;
   migrations: typeof migrations;
   questionTemplates: typeof questionTemplates;
