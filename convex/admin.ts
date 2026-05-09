@@ -1,0 +1,326 @@
+import { v } from "convex/values";
+import { query, mutation } from "./_generated/server";
+
+// All admin-only functions live here. Authorization is enforced at the
+// caller (admin website + backend); these handlers do not double-check
+// because the public WorkOS-gated client already filters by admin email.
+
+export const listAllFirms = query({
+  args: {},
+  handler: async (ctx) => {
+    const firms = await ctx.db.query("firms").collect();
+    return firms.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+export const getFirm = query({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    return await ctx.db.get(firmId);
+  },
+});
+
+export const updateFirm = mutation({
+  args: {
+    firmId: v.id("firms"),
+    updates: v.object({
+      displayName: v.optional(v.string()),
+      membershipStatus: v.optional(v.string()),
+      subscriptionStartDate: v.optional(v.union(v.number(), v.null())),
+      subscriptionEndDate: v.optional(v.union(v.number(), v.null())),
+      aiCreditsRemaining: v.optional(v.union(v.number(), v.null())),
+      maxClientSlots: v.optional(v.union(v.number(), v.null())),
+      clientRollback: v.optional(v.boolean()),
+      apiKey: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, { firmId, updates }) => {
+    const patch: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(updates)) {
+      if (value === undefined) continue;
+      // Convex `null` clears optional fields; pass through.
+      patch[key] = value;
+    }
+    await ctx.db.patch(firmId, patch);
+    return await ctx.db.get(firmId);
+  },
+});
+
+export const createFirm = mutation({
+  args: {
+    workosUserId: v.string(),
+    displayName: v.optional(v.string()),
+    membershipStatus: v.string(),
+    subscriptionEndDate: v.optional(v.number()),
+    maxClientSlots: v.optional(v.number()),
+    aiCreditsRemaining: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("firms")
+      .withIndex("by_workosUserId", (q) =>
+        q.eq("workosUserId", args.workosUserId),
+      )
+      .first();
+    if (existing) return existing._id;
+
+    return await ctx.db.insert("firms", args);
+  },
+});
+
+export const deleteFirm = mutation({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    await ctx.db.delete(firmId);
+  },
+});
+
+export const listAllClients = query({
+  args: {},
+  handler: async (ctx) => {
+    const clients = await ctx.db.query("clients").collect();
+    return clients.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+export const listAllSubmissions = query({
+  args: {},
+  handler: async (ctx) => {
+    const submissions = await ctx.db.query("submissions").collect();
+    return submissions.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+export const listAllErrorLogs = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const all = await ctx.db.query("errorLogs").collect();
+    const sorted = all.sort((a, b) => b._creationTime - a._creationTime);
+    return limit ? sorted.slice(0, limit) : sorted;
+  },
+});
+
+// Admin: per-firm submission counts bucketed by formType + period.
+// Returns the same shape the legacy Supabase RPC produced so the existing
+// dashboard tables can read it without rewriting.
+export const getAllFirmsSubmissionStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const firms = await ctx.db.query("firms").collect();
+    const submissions = await ctx.db.query("submissions").collect();
+
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const dayAgo = now - dayMs;
+    const weekAgo = now - 7 * dayMs;
+    const monthAgo = now - 30 * dayMs;
+
+    return firms.map((firm) => {
+      const firmSubs = submissions.filter((s) => s.firmId === firm._id);
+      const byType = (type: string) =>
+        firmSubs.filter((s) => (s.formType ?? "") === type);
+      const inRange = (subs: typeof firmSubs, since: number) =>
+        subs.filter((s) => s._creationTime >= since).length;
+
+      const arrima = byType("ARRIMA");
+      const imm = firmSubs.filter((s) => (s.formType ?? "") !== "ARRIMA");
+
+      return {
+        firmId: firm._id,
+        displayName: firm.displayName ?? null,
+        arrima_day: inRange(arrima, dayAgo),
+        arrima_week: inRange(arrima, weekAgo),
+        arrima_month: inRange(arrima, monthAgo),
+        arrima_total: arrima.length,
+        imm_day: inRange(imm, dayAgo),
+        imm_week: inRange(imm, weekAgo),
+        imm_month: inRange(imm, monthAgo),
+        imm_total: imm.length,
+        grand_total: firmSubs.length,
+      };
+    });
+  },
+});
+
+// Admin: global submission counts (sum across all firms).
+export const getGlobalSubmissionStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const submissions = await ctx.db.query("submissions").collect();
+
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const dayAgo = now - dayMs;
+    const weekAgo = now - 7 * dayMs;
+    const monthAgo = now - 30 * dayMs;
+
+    const arrima = submissions.filter((s) => (s.formType ?? "") === "ARRIMA");
+    const imm = submissions.filter((s) => (s.formType ?? "") !== "ARRIMA");
+
+    const inRange = (subs: typeof submissions, since: number) =>
+      subs.filter((s) => s._creationTime >= since).length;
+
+    return {
+      arrima_day: inRange(arrima, dayAgo),
+      arrima_week: inRange(arrima, weekAgo),
+      arrima_month: inRange(arrima, monthAgo),
+      arrima_total: arrima.length,
+      imm_day: inRange(imm, dayAgo),
+      imm_week: inRange(imm, weekAgo),
+      imm_month: inRange(imm, monthAgo),
+      imm_total: imm.length,
+      grand_total: submissions.length,
+    };
+  },
+});
+
+// Admin: per-firm AI cost aggregates from aiUsageLogs.
+// Pricing is computed client-side (see lib/modelPricing.ts) — this returns the
+// raw token usage grouped by firm + model so the dashboard can multiply.
+export const getAiUsageByFirm = query({
+  args: {},
+  handler: async (ctx) => {
+    const logs = await ctx.db.query("aiUsageLogs").collect();
+
+    const byFirm: Record<
+      string,
+      Array<{
+        modelName: string;
+        promptTokens: number;
+        completionTokens: number;
+        createdAt: number;
+      }>
+    > = {};
+
+    for (const log of logs) {
+      const key = log.firmId as string;
+      if (!byFirm[key]) byFirm[key] = [];
+      byFirm[key].push({
+        modelName: log.modelName,
+        promptTokens: log.promptTokens,
+        completionTokens: log.completionTokens,
+        createdAt: log._creationTime,
+      });
+    }
+
+    return byFirm;
+  },
+});
+
+// Admin: clients with submissions + legal docs joined, scoped to one firm.
+// Replaces the old fetchUserClients RPC; powers the UserDetail clients table.
+export const getFirmClientsDetail = query({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    const clients = await ctx.db
+      .query("clients")
+      .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+      .collect();
+
+    return await Promise.all(
+      clients.map(async (client) => {
+        const submissions = await ctx.db
+          .query("submissions")
+          .withIndex("by_client", (q) => q.eq("clientId", client._id))
+          .collect();
+
+        const latestSubmission =
+          submissions.sort((a, b) => b._creationTime - a._creationTime)[0] ??
+          null;
+
+        const legalDocs = await ctx.db
+          .query("generatedLegalDocs")
+          .filter((q) => q.eq(q.field("clientId"), client._id))
+          .collect();
+
+        let formDefinitionName: string | null = null;
+        if (client.primaryFormDefinitionId) {
+          const def = await ctx.db.get(client.primaryFormDefinitionId);
+          formDefinitionName = def?.name ?? null;
+        }
+
+        const answerCount = latestSubmission?.answers
+          ? Object.keys(latestSubmission.answers as Record<string, unknown>)
+              .length
+          : 0;
+
+        const lastActivity = latestSubmission
+          ? latestSubmission._creationTime
+          : client._creationTime;
+        const daysSinceActivity = Math.floor(
+          (Date.now() - lastActivity) / (1000 * 60 * 60 * 24),
+        );
+
+        return {
+          _id: client._id,
+          firstName: client.firstName ?? null,
+          lastName: client.lastName ?? null,
+          email: client.email ?? null,
+          status: client.status ?? null,
+          formDefinitionName,
+          createdAt: client._creationTime,
+          submissionId: latestSubmission?._id ?? null,
+          submissionStatus: latestSubmission?.status ?? null,
+          submissionFormType: latestSubmission?.formType ?? null,
+          answerCount,
+          preferredLanguage: latestSubmission?.preferredLanguage ?? "fr",
+          hasTranslatedAnswers: !!latestSubmission?.translatedAnswers,
+          lastActivity,
+          daysSinceActivity,
+          isStuck:
+            daysSinceActivity >= 7 &&
+            latestSubmission?.status === "in_progress",
+          legalDocsAssigned: legalDocs.length,
+          legalDocsGenerated: legalDocs.filter(
+            (d) => d.status === "generated" && d.storageId,
+          ).length,
+          legalDocsPending: legalDocs.filter((d) => d.status !== "generated")
+            .length,
+        };
+      }),
+    );
+  },
+});
+
+// Admin: form-feedback rows with the client/submission context flattened.
+// The legacy admin Analytics page reads form_feedback joined with applications;
+// here we flatten submissions + clients onto each feedback row.
+export const listAllFormFeedback = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("feedback").collect();
+    const formRatings = all.filter((f) => f.type === "form_rating");
+
+    return await Promise.all(
+      formRatings
+        .sort((a, b) => b._creationTime - a._creationTime)
+        .map(async (f) => {
+          const submission = f.submissionId
+            ? await ctx.db.get(f.submissionId)
+            : null;
+          const client = submission?.clientId
+            ? await ctx.db.get(submission.clientId)
+            : null;
+          const firmId =
+            submission?.firmId ?? f.firmId ?? client?.firmId ?? null;
+
+          return {
+            _id: f._id,
+            createdAt: f._creationTime,
+            submissionId: f.submissionId ?? null,
+            firmId,
+            formType: submission?.formType ?? null,
+            clientName: client
+              ? [client.firstName, client.lastName].filter(Boolean).join(" ") ||
+                null
+              : null,
+            rating: f.rating ?? null,
+            nps: f.nps ?? null,
+            easeOfUse: f.easeOfUse ?? null,
+            device: f.device ?? null,
+            comment: f.message ?? null,
+          };
+        }),
+    );
+  },
+});
