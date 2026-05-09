@@ -696,5 +696,99 @@ export type PublicApiType = {
       any
     >;
   };
+  admin: {
+    listAllFirms: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getFirm: FunctionReference<"query", "public", { firmId: Id<"firms"> }, any>;
+    updateFirm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        updates: {
+          aiCreditsRemaining?: number | null;
+          apiKey?: string;
+          clientRollback?: boolean;
+          displayName?: string;
+          maxClientSlots?: number | null;
+          membershipStatus?: string;
+          subscriptionEndDate?: number | null;
+          subscriptionStartDate?: number | null;
+        };
+      },
+      any
+    >;
+    createFirm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        aiCreditsRemaining?: number;
+        displayName?: string;
+        maxClientSlots?: number;
+        membershipStatus: string;
+        subscriptionEndDate?: number;
+        workosUserId: string;
+      },
+      any
+    >;
+    deleteFirm: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listAllClients: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listAllSubmissions: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listAllErrorLogs: FunctionReference<
+      "query",
+      "public",
+      { limit?: number },
+      any
+    >;
+    getAllFirmsSubmissionStats: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getGlobalSubmissionStats: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getAiUsageByFirm: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getFirmClientsDetail: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listAllFormFeedback: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+  };
 };
 export type InternalApiType = {};
