@@ -46,9 +46,18 @@ export const updateFirm = mutation({
   },
 });
 
-export const createFirm = mutation({
+// Invitation flow:
+// 1. createPendingFirm — admin creates a firm row keyed by pendingEmail.
+// 2. (admin website) calls WorkOS sendInvitation, then attachInvitationToFirm.
+// 3. User accepts invitation, signs in via main-website. AuthContext calls
+//    attachWorkosUserToFirm, which claims the pending firm by email.
+// A firm is "pending" iff workosUserId is unset.
+
+const normalizeEmail = (email: string) => email.toLowerCase().trim();
+
+export const createPendingFirm = mutation({
   args: {
-    workosUserId: v.string(),
+    pendingEmail: v.string(),
     displayName: v.optional(v.string()),
     membershipStatus: v.string(),
     subscriptionEndDate: v.optional(v.number()),
@@ -56,15 +65,81 @@ export const createFirm = mutation({
     aiCreditsRemaining: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("firms")
-      .withIndex("by_workosUserId", (q) =>
-        q.eq("workosUserId", args.workosUserId),
-      )
-      .first();
-    if (existing) return existing._id;
+    const email = normalizeEmail(args.pendingEmail);
 
-    return await ctx.db.insert("firms", args);
+    const existingPending = await ctx.db
+      .query("firms")
+      .withIndex("by_pendingEmail", (q) => q.eq("pendingEmail", email))
+      .first();
+    if (existingPending) {
+      throw new Error(
+        `A firm is already pending invitation for ${email}`,
+      );
+    }
+
+    return await ctx.db.insert("firms", {
+      pendingEmail: email,
+      displayName: args.displayName,
+      membershipStatus: args.membershipStatus,
+      subscriptionEndDate: args.subscriptionEndDate,
+      maxClientSlots: args.maxClientSlots,
+      aiCreditsRemaining: args.aiCreditsRemaining,
+    });
+  },
+});
+
+export const attachInvitationToFirm = mutation({
+  args: {
+    firmId: v.id("firms"),
+    workosInvitationId: v.string(),
+    invitationSentAt: v.number(),
+  },
+  handler: async (ctx, { firmId, workosInvitationId, invitationSentAt }) => {
+    await ctx.db.patch(firmId, { workosInvitationId, invitationSentAt });
+    return await ctx.db.get(firmId);
+  },
+});
+
+export const attachWorkosUserToFirm = mutation({
+  args: {
+    pendingEmail: v.string(),
+    workosUserId: v.string(),
+  },
+  handler: async (ctx, { pendingEmail, workosUserId }) => {
+    const email = normalizeEmail(pendingEmail);
+
+    // Idempotent: if the user already owns a firm, return it.
+    const owned = await ctx.db
+      .query("firms")
+      .withIndex("by_workosUserId", (q) => q.eq("workosUserId", workosUserId))
+      .first();
+    if (owned) return owned;
+
+    const pending = await ctx.db
+      .query("firms")
+      .withIndex("by_pendingEmail", (q) => q.eq("pendingEmail", email))
+      .first();
+    if (!pending) return null;
+
+    await ctx.db.patch(pending._id, {
+      workosUserId,
+      pendingEmail: undefined,
+    });
+    return await ctx.db.get(pending._id);
+  },
+});
+
+export const cancelPendingFirm = mutation({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    const firm = await ctx.db.get(firmId);
+    if (!firm) return;
+    if (firm.workosUserId) {
+      throw new Error(
+        "Cannot cancel: firm is already attached to a WorkOS user",
+      );
+    }
+    await ctx.db.delete(firmId);
   },
 });
 

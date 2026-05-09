@@ -3,7 +3,10 @@ import { v } from "convex/values";
 
 export default defineSchema({
   firms: defineTable({
-    workosUserId: v.string(),
+    workosUserId: v.optional(v.string()),
+    pendingEmail: v.optional(v.string()),
+    workosInvitationId: v.optional(v.string()),
+    invitationSentAt: v.optional(v.number()),
     displayName: v.optional(v.string()),
     apiKey: v.optional(v.string()),
     membershipStatus: v.string(),
@@ -26,7 +29,8 @@ export default defineSchema({
     ),
     emailOverrides: v.optional(v.record(v.string(), v.string())),
   })
-    .index("by_workosUserId", ["workosUserId"]),
+    .index("by_workosUserId", ["workosUserId"])
+    .index("by_pendingEmail", ["pendingEmail"]),
 
   clients: defineTable({
     firmId: v.id("firms"),
