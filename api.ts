@@ -722,7 +722,7 @@ export type PublicApiType = {
       },
       any
     >;
-    createFirm: FunctionReference<
+    createPendingFirm: FunctionReference<
       "mutation",
       "public",
       {
@@ -730,9 +730,31 @@ export type PublicApiType = {
         displayName?: string;
         maxClientSlots?: number;
         membershipStatus: string;
+        pendingEmail: string;
         subscriptionEndDate?: number;
-        workosUserId: string;
       },
+      any
+    >;
+    attachInvitationToFirm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        invitationSentAt: number;
+        workosInvitationId: string;
+      },
+      any
+    >;
+    attachWorkosUserToFirm: FunctionReference<
+      "mutation",
+      "public",
+      { pendingEmail: string; workosUserId: string },
+      any
+    >;
+    cancelPendingFirm: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms"> },
       any
     >;
     deleteFirm: FunctionReference<
