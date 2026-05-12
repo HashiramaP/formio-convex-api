@@ -146,6 +146,9 @@ export default defineSchema({
     documentCoverage: v.optional(v.any()),
     screeningQuestions: v.optional(v.any()),
     language: v.string(),
+    // Slice 1 spike — answer key → XFA leaf name mapping for the fill worker.
+    // Replaced by `legalDocumentFields` table in Slice 2 (ROADMAP).
+    fieldMappings: v.optional(v.any()),
   })
     .index("by_language", ["language"]),
 

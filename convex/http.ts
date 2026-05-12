@@ -1,5 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
+import { api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
 
@@ -37,6 +39,20 @@ http.route({
 
     const storageId = await ctx.storage.store(blob);
     const url = await ctx.storage.getUrl(storageId);
+
+    // Slice 1 spike — when the worker forwards client/document context, mark
+    // generatedLegalDocs as ready in the same request. Both headers optional
+    // so legacy callers (no Convex linkage) keep working.
+    const clientId = request.headers.get("x-client-id");
+    const legalDocumentId = request.headers.get("x-legal-document-id");
+    if (clientId && legalDocumentId) {
+      await ctx.runMutation(api.legalDocuments.upsertGeneratedLegalDoc, {
+        clientId: clientId as Id<"clients">,
+        legalDocumentId: legalDocumentId as Id<"legalDocuments">,
+        storageId,
+        status: "ready",
+      });
+    }
 
     return new Response(JSON.stringify({ jobId, template, storageId, url }), {
       status: 200,
