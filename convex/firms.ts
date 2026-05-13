@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 
 export const getFirmDisplayName = query({
   args: { firmId: v.id("firms") },
@@ -40,27 +40,46 @@ export const generateApiKey = mutation({
   },
 });
 
-export const getCredits = query({
+export const getMonthlyClientQuota = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
     const firm = await ctx.db.get(firmId);
-    if (!firm) return { credits: null, limit: null };
+    if (!firm) return { remaining: null, limit: null };
     return {
-      credits: firm.aiCreditsRemaining ?? null,
-      limit: firm.maxClientSlots ?? null,
+      remaining: firm.monthlyClientsRemaining ?? null,
+      limit: firm.monthlyClientLimit ?? null,
     };
   },
 });
 
-export const decrementCredits = mutation({
+export const decrementMonthlyClients = mutation({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
     const firm = await ctx.db.get(firmId);
     if (!firm) return;
-    const current = firm.aiCreditsRemaining;
+    const current = firm.monthlyClientsRemaining;
     if (typeof current === "number" && current > 0) {
-      await ctx.db.patch(firmId, { aiCreditsRemaining: current - 1 });
+      await ctx.db.patch(firmId, { monthlyClientsRemaining: current - 1 });
     }
+  },
+});
+
+// Resets every firm's `monthlyClientsRemaining` back to its `monthlyClientLimit`.
+// Scheduled by `crons.ts` on the 1st of each month. Firms with no limit set are
+// left untouched (treated as unlimited).
+export const resetMonthlyClientQuotas = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const firms = await ctx.db.query("firms").collect();
+    let resetCount = 0;
+    for (const firm of firms) {
+      if (typeof firm.monthlyClientLimit !== "number") continue;
+      await ctx.db.patch(firm._id, {
+        monthlyClientsRemaining: firm.monthlyClientLimit,
+      });
+      resetCount++;
+    }
+    return { resetCount, totalFirms: firms.length };
   },
 });
 

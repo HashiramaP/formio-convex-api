@@ -12,9 +12,8 @@ export default defineSchema({
     membershipStatus: v.string(),
     subscriptionStartDate: v.optional(v.number()),
     subscriptionEndDate: v.optional(v.number()),
-    aiCreditsRemaining: v.optional(v.number()),
-    maxClientSlots: v.optional(v.number()),
-    clientRollback: v.optional(v.boolean()),
+    monthlyClientsRemaining: v.optional(v.number()),
+    monthlyClientLimit: v.optional(v.number()),
     emailSettings: v.optional(
       v.object({
         generalNotificationEmail: v.optional(v.string()),

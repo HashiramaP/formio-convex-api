@@ -194,13 +194,13 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
-    getCredits: FunctionReference<
+    getMonthlyClientQuota: FunctionReference<
       "query",
       "public",
       { firmId: Id<"firms"> },
       any
     >;
-    decrementCredits: FunctionReference<
+    decrementMonthlyClients: FunctionReference<
       "mutation",
       "public",
       { firmId: Id<"firms"> },
@@ -722,11 +722,10 @@ export type PublicApiType = {
       {
         firmId: Id<"firms">;
         updates: {
-          aiCreditsRemaining?: number | null;
           apiKey?: string;
-          clientRollback?: boolean;
           displayName?: string;
-          maxClientSlots?: number | null;
+          monthlyClientLimit?: number | null;
+          monthlyClientsRemaining?: number | null;
           membershipStatus?: string;
           subscriptionEndDate?: number | null;
           subscriptionStartDate?: number | null;
@@ -738,9 +737,9 @@ export type PublicApiType = {
       "mutation",
       "public",
       {
-        aiCreditsRemaining?: number;
         displayName?: string;
-        maxClientSlots?: number;
+        monthlyClientLimit?: number;
+        monthlyClientsRemaining?: number;
         membershipStatus: string;
         pendingEmail: string;
         subscriptionEndDate?: number;

@@ -77,9 +77,8 @@ async function migrateFirms(): Promise<Record<string, string>> {
     membershipStatus: u.membership_status || "trial",
     subscriptionStartDate: toTimestamp(u.subscription_start_date),
     subscriptionEndDate: toTimestamp(u.subscription_end_date),
-    aiCreditsRemaining: u.client_credits ?? undefined,
-    maxClientSlots: u.client_amount ?? undefined,
-    clientRollback: u.client_rollback ?? undefined,
+    monthlyClientsRemaining: u.client_credits ?? undefined,
+    monthlyClientLimit: u.client_amount ?? undefined,
   }));
 
   const mapping = convexRun("migrations:insertFirms", { rows });
@@ -588,7 +587,23 @@ async function migrateErrorLogs(
   }
 }
 
+async function runSchemaMigration() {
+  log("Running schema migration for existing firms...");
+  const result = convexRun("migrations:migrateFirmsSchema", {});
+  log(`  Updated ${result.updated} firms (total: ${result.total})`);
+}
+
 async function main() {
+  // Check if running with --schema-only flag
+  const schemaOnly = process.argv.includes("--schema-only");
+
+  if (schemaOnly) {
+    log("=== Running schema migration only ===");
+    await runSchemaMigration();
+    log("=== Schema migration complete ===");
+    return;
+  }
+
   log("=== Starting Supabase → Convex migration (dev) ===");
   log(`Migrating ${FIRM_IDS.length} firms to Convex dev deployment`);
 

@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as aiUsageLogs from "../aiUsageLogs.js";
 import type * as clients from "../clients.js";
+import type * as crons from "../crons.js";
 import type * as errorLogs from "../errorLogs.js";
 import type * as feedback from "../feedback.js";
 import type * as firms from "../firms.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   aiUsageLogs: typeof aiUsageLogs;
   clients: typeof clients;
+  crons: typeof crons;
   errorLogs: typeof errorLogs;
   feedback: typeof feedback;
   firms: typeof firms;

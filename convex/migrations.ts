@@ -12,9 +12,8 @@ export const insertFirms = internalMutation({
         membershipStatus: v.string(),
         subscriptionStartDate: v.optional(v.number()),
         subscriptionEndDate: v.optional(v.number()),
-        aiCreditsRemaining: v.optional(v.number()),
-        maxClientSlots: v.optional(v.number()),
-        clientRollback: v.optional(v.boolean()),
+        monthlyClientsRemaining: v.optional(v.number()),
+        monthlyClientLimit: v.optional(v.number()),
       })
     ),
   },
@@ -528,6 +527,40 @@ export const backfillLegacyClientIds = internalMutation({
       updated++;
     }
     return { updated };
+  },
+});
+
+// One-shot migration: rename aiCreditsRemaining → monthlyClientsRemaining,
+// maxClientSlots → monthlyClientLimit, and drop clientRollback.
+// Run once with `schemaValidation: false` in schema.ts, then re-enable validation.
+export const migrateFirmsSchema = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const firms = await ctx.db.query("firms").collect();
+    let updated = 0;
+    for (const firm of firms as any[]) {
+      const hasOld =
+        "aiCreditsRemaining" in firm ||
+        "maxClientSlots" in firm ||
+        "clientRollback" in firm;
+      if (!hasOld) continue;
+
+      const patch: Record<string, unknown> = {
+        aiCreditsRemaining: undefined,
+        maxClientSlots: undefined,
+        clientRollback: undefined,
+      };
+      if (typeof firm.aiCreditsRemaining === "number" && firm.monthlyClientsRemaining === undefined) {
+        patch.monthlyClientsRemaining = firm.aiCreditsRemaining;
+      }
+      if (typeof firm.maxClientSlots === "number" && firm.monthlyClientLimit === undefined) {
+        patch.monthlyClientLimit = firm.maxClientSlots;
+      }
+
+      await ctx.db.patch(firm._id, patch as any);
+      updated++;
+    }
+    return { updated, total: firms.length };
   },
 });
 

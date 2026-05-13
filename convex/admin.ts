@@ -28,9 +28,8 @@ export const updateFirm = mutation({
       membershipStatus: v.optional(v.string()),
       subscriptionStartDate: v.optional(v.union(v.number(), v.null())),
       subscriptionEndDate: v.optional(v.union(v.number(), v.null())),
-      aiCreditsRemaining: v.optional(v.union(v.number(), v.null())),
-      maxClientSlots: v.optional(v.union(v.number(), v.null())),
-      clientRollback: v.optional(v.boolean()),
+      monthlyClientsRemaining: v.optional(v.union(v.number(), v.null())),
+      monthlyClientLimit: v.optional(v.union(v.number(), v.null())),
       apiKey: v.optional(v.string()),
     }),
   },
@@ -61,8 +60,8 @@ export const createPendingFirm = mutation({
     displayName: v.optional(v.string()),
     membershipStatus: v.string(),
     subscriptionEndDate: v.optional(v.number()),
-    maxClientSlots: v.optional(v.number()),
-    aiCreditsRemaining: v.optional(v.number()),
+    monthlyClientLimit: v.optional(v.number()),
+    monthlyClientsRemaining: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const email = normalizeEmail(args.pendingEmail);
@@ -82,8 +81,8 @@ export const createPendingFirm = mutation({
       displayName: args.displayName,
       membershipStatus: args.membershipStatus,
       subscriptionEndDate: args.subscriptionEndDate,
-      maxClientSlots: args.maxClientSlots,
-      aiCreditsRemaining: args.aiCreditsRemaining,
+      monthlyClientLimit: args.monthlyClientLimit,
+      monthlyClientsRemaining: args.monthlyClientsRemaining,
     });
   },
 });
