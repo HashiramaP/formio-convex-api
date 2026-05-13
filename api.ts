@@ -724,9 +724,9 @@ export type PublicApiType = {
         updates: {
           apiKey?: string;
           displayName?: string;
+          membershipStatus?: string;
           monthlyClientLimit?: number | null;
           monthlyClientsRemaining?: number | null;
-          membershipStatus?: string;
           subscriptionEndDate?: number | null;
           subscriptionStartDate?: number | null;
         };
@@ -738,9 +738,9 @@ export type PublicApiType = {
       "public",
       {
         displayName?: string;
+        membershipStatus: string;
         monthlyClientLimit?: number;
         monthlyClientsRemaining?: number;
-        membershipStatus: string;
         pendingEmail: string;
         subscriptionEndDate?: number;
       },
