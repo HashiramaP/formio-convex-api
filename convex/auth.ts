@@ -58,41 +58,68 @@ export async function requireFirmAccess(
   return firm;
 }
 
-// WorkOS AuthKit JWTs don't populate the standard OIDC `email` claim —
-// the user's email lands in the actor-subject (`act.sub`) claim instead. We
-// check both: prefer the standard claim if a future WorkOS version emits it,
-// fall back to `act.sub` which is what AuthKit 0.16.x actually issues.
-function extractEmail(identity: { email?: string }): string | null {
-  if (identity.email) return identity.email.toLowerCase();
-  const actSub = (identity as Record<string, unknown>)["act.sub"];
-  if (typeof actSub === "string" && actSub.includes("@")) {
-    return actSub.toLowerCase();
+// WorkOS AuthKit JWTs don't populate the standard OIDC `email` claim. AuthKit
+// 0.16.x puts the email in the actor (`act.sub`) claim — Convex exposes nested
+// JWT subfields as dot-joined keys per
+// https://docs.convex.dev/auth/advanced/custom-jwt#custom-claims.
+// We check several plausible spots and fall back to ADMIN_WORKOS_USER_IDS
+// (matched against the JWT `sub` claim) when no email can be extracted.
+function extractEmail(identity: Record<string, unknown>): string | null {
+  const candidates: unknown[] = [
+    identity.email,
+    identity["act.sub"],
+    (identity.act as Record<string, unknown> | undefined)?.sub,
+    identity["preferred_username"],
+    identity.preferredUsername,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.includes("@")) {
+      return c.toLowerCase().trim();
+    }
   }
   return null;
 }
 
-// Throws unless the caller's WorkOS-account email is in the ADMIN_EMAILS env
-// var (comma-separated, case-insensitive). This is the server-side gate for
-// admin-dashboard queries — the admin-website already checks the same allowlist
-// client-side to gate the UI, but that check is bypassable.
+// Throws unless the caller is an admin. Admin identity can be asserted by
+// either ADMIN_EMAILS (matched against the JWT email) or ADMIN_WORKOS_USER_IDS
+// (matched against the JWT `sub` claim — the WorkOS user ID, always present).
+// The user-IDs path is the fallback when the JWT doesn't carry an email claim
+// in any of the shapes we know about.
 export async function requireAdmin(ctx: Ctx): Promise<void> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new AuthError("Unauthorized: admin access requires authentication");
   }
-  const allowlist = (process.env.ADMIN_EMAILS ?? "")
+
+  const emailAllowlist = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  if (allowlist.length === 0) {
+  const userIdAllowlist = (process.env.ADMIN_WORKOS_USER_IDS ?? "")
+    .split(",")
+    .map((u) => u.trim())
+    .filter(Boolean);
+
+  if (emailAllowlist.length === 0 && userIdAllowlist.length === 0) {
     throw new AuthError(
-      "Server misconfigured: ADMIN_EMAILS env var is empty (set with `npx convex env set ADMIN_EMAILS a@x.com,b@y.com`)",
+      "Server misconfigured: set ADMIN_EMAILS or ADMIN_WORKOS_USER_IDS via `npx convex env set ...`",
     );
   }
-  const email = extractEmail(identity);
-  if (!email || !allowlist.includes(email)) {
-    throw new AuthError("Unauthorized: not in admin allowlist");
-  }
+
+  if (userIdAllowlist.includes(identity.subject)) return;
+
+  const email = extractEmail(identity as Record<string, unknown>);
+  if (email && emailAllowlist.includes(email)) return;
+
+  // One-shot diagnostic so the operator can see what the JWT actually carries
+  // when this fails. Inspect Convex logs and either add the missing email to
+  // ADMIN_EMAILS or copy the `sub` value into ADMIN_WORKOS_USER_IDS.
+  console.log("[auth] admin denied", {
+    subject: identity.subject,
+    extractedEmail: email,
+    identityKeys: Object.keys(identity),
+  });
+  throw new AuthError("Unauthorized: not in admin allowlist");
 }
 
 // Verifies the caller owns the client (via firmId match). Useful for client-
