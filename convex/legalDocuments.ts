@@ -1,5 +1,12 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireClientAccess, requireCurrentFirm, AuthError } from "./auth";
+
+// Form-website reads `getLegalDocumentsByIds`, `listGeneratedDocs`,
+// `getGeneratedDocUrl`, `getLegalDocumentsByIds`, `listGeneratedDocsForClients`,
+// `buildFillJobPayload` and writes `upsertGeneratedLegalDoc`. These all stay
+// open because the URL (clientId / submissionId) is the bearer token.
+// `deleteGeneratedDoc` and `setFieldMappings` are dashboard-only.
 
 export const getLegalDocumentsByIds = query({
   args: { ids: v.array(v.id("legalDocuments")) },
@@ -71,6 +78,7 @@ export const deleteGeneratedDoc = mutation({
     legalDocumentId: v.id("legalDocuments"),
   },
   handler: async (ctx, { clientId, legalDocumentId }) => {
+    await requireClientAccess(ctx, clientId);
     const existing = await ctx.db
       .query("generatedLegalDocs")
       .withIndex("by_client_doc", (q) =>
@@ -109,6 +117,10 @@ export const setFieldMappings = mutation({
     fieldMappings: v.any(),
   },
   handler: async (ctx, { legalDocumentId, fieldMappings }) => {
+    // Dashboard-only setup; legalDocuments rows are global catalog entries so
+    // any authenticated firm member can edit them (matches existing behavior).
+    // Tighten to admin-only once the catalog moves to admin-website.
+    await requireCurrentFirm(ctx);
     await ctx.db.patch(legalDocumentId, { fieldMappings });
   },
 });

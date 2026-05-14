@@ -1,9 +1,34 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireCurrentFirm, requireFirmAccess, AuthError } from "./auth";
+
+// All formDefinitions surfaces are dashboard-only (main-website). Form-website
+// reads the form-question tree via `questions.getFormQuestions` once it has a
+// formDefinitionId from the submission/client — it doesn't list or mutate.
+//
+// Mutations that take a formId (not firmId) check that the form belongs to the
+// caller's firm via assertFormBelongsToCallerFirm.
+
+async function assertFormBelongsToCallerFirm(
+  ctx: Parameters<typeof requireCurrentFirm>[0],
+  formId: import("./_generated/dataModel").Id<"formDefinitions">,
+) {
+  const firm = await requireCurrentFirm(ctx);
+  const form = await ctx.db.get(formId);
+  if (!form) throw new AuthError("Form not found");
+  // Global forms (no firmId) are read-only catalog entries; mutations on them
+  // are not permitted by any caller — only the team can promote new ones via
+  // direct DB access during onboarding.
+  if (!form.firmId || form.firmId !== firm._id) {
+    throw new AuthError("Unauthorized: form not in caller's firm");
+  }
+  return { firm, form };
+}
 
 export const listGlobalForms = query({
   args: {},
   handler: async (ctx) => {
+    await requireCurrentFirm(ctx);
     const all = await ctx.db.query("formDefinitions").collect();
     return all
       .filter(
@@ -20,6 +45,7 @@ export const listGlobalForms = query({
 export const listCustomForms = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const forms = await ctx.db
       .query("formDefinitions")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -33,6 +59,7 @@ export const listCustomForms = query({
 export const getFirmBaseForm = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const forms = await ctx.db
       .query("formDefinitions")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -52,6 +79,11 @@ export const getFirmBaseForm = query({
 export const listFormsForSendFlow = query({
   args: { firmId: v.optional(v.id("firms")) },
   handler: async (ctx, { firmId }) => {
+    if (firmId) {
+      await requireFirmAccess(ctx, firmId);
+    } else {
+      await requireCurrentFirm(ctx);
+    }
     const all = await ctx.db.query("formDefinitions").collect();
 
     const globalForms = all
@@ -111,6 +143,7 @@ export const listFormsForSendFlow = query({
 export const listFormsForFirm = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const all = await ctx.db.query("formDefinitions").collect();
     return all
       .filter(
@@ -129,6 +162,7 @@ export const createBlankForm = mutation({
     isBaseForm: v.optional(v.boolean()),
   },
   handler: async (ctx, { firmId, name, category, isBaseForm }) => {
+    await requireFirmAccess(ctx, firmId);
     const slug =
       name
         .toLowerCase()
@@ -154,6 +188,7 @@ export const createBlankForm = mutation({
 export const renameForm = mutation({
   args: { formId: v.id("formDefinitions"), name: v.string() },
   handler: async (ctx, { formId, name }) => {
+    await assertFormBelongsToCallerFirm(ctx, formId);
     await ctx.db.patch(formId, { name });
   },
 });
@@ -161,6 +196,7 @@ export const renameForm = mutation({
 export const deleteForm = mutation({
   args: { formId: v.id("formDefinitions") },
   handler: async (ctx, { formId }) => {
+    await assertFormBelongsToCallerFirm(ctx, formId);
     const fqs = await ctx.db
       .query("formQuestions")
       .withIndex("by_formDefinition", (q) => q.eq("formDefinitionId", formId))
@@ -175,6 +211,7 @@ export const deleteForm = mutation({
 export const getGlobalBaseForm = query({
   args: {},
   handler: async (ctx) => {
+    await requireCurrentFirm(ctx);
     const forms = await ctx.db.query("formDefinitions").collect();
     return (
       forms.find((f) => !f.firmId && f.isBaseForm && !f.deletedAt) ?? null
@@ -196,6 +233,7 @@ export const updateFormDefinition = mutation({
     }),
   },
   handler: async (ctx, { formId, updates }) => {
+    await assertFormBelongsToCallerFirm(ctx, formId);
     await ctx.db.patch(formId, updates);
   },
 });
@@ -206,6 +244,7 @@ export const linkBaseForm = mutation({
     baseFormId: v.optional(v.id("formDefinitions")),
   },
   handler: async (ctx, { customFormId, baseFormId }) => {
+    await assertFormBelongsToCallerFirm(ctx, customFormId);
     if (baseFormId) {
       // Linking: clear self-contained, set base form, reset excluded sections
       await ctx.db.patch(customFormId, {
@@ -230,6 +269,7 @@ export const setBaseSectionToggles = mutation({
     excludedBaseSections: v.array(v.string()),
   },
   handler: async (ctx, { customFormId, excludedBaseSections }) => {
+    await assertFormBelongsToCallerFirm(ctx, customFormId);
     await ctx.db.patch(customFormId, { excludedBaseSections });
   },
 });
@@ -242,8 +282,14 @@ export const forkForm = mutation({
     name: v.optional(v.string()),
   },
   handler: async (ctx, { sourceFormId, firmId, isBaseForm, name }) => {
+    // Fork target must be the caller's firm. Source can be a global form or
+    // one of the caller's own — but never another firm's custom form.
+    await requireFirmAccess(ctx, firmId);
     const source = await ctx.db.get(sourceFormId);
     if (!source) throw new Error("Source form not found");
+    if (source.firmId && source.firmId !== firmId) {
+      throw new AuthError("Unauthorized: cannot fork another firm's form");
+    }
 
     const newName = name ?? `${source.name ?? "Formulaire"} (copie)`;
     const slug =
@@ -296,6 +342,7 @@ export const forkForm = mutation({
 export const deleteBaseForm = mutation({
   args: { formId: v.id("formDefinitions") },
   handler: async (ctx, { formId }) => {
+    await assertFormBelongsToCallerFirm(ctx, formId);
     const all = await ctx.db.query("formDefinitions").collect();
     const linked = all.filter((f) => f.baseFormId === formId);
     for (const child of linked) {

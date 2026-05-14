@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireFirmAccess, requireAdmin } from "./auth";
 
+// saveFeedback + hasFeedback are called from form-website (post-submission
+// rating panel) — anonymous. Everything else is dashboard-only.
 export const saveFeedback = mutation({
   args: {
     submissionId: v.id("submissions"),
@@ -50,6 +53,7 @@ export const insertDashboardFeedback = mutation({
     message: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireFirmAccess(ctx, args.firmId);
     return await ctx.db.insert("feedback", args);
   },
 });
@@ -66,6 +70,7 @@ export const insertMonthlyFeedback = mutation({
     ctx,
     { firmId, rating, formCount, selectedOptions, otherFeedback },
   ) => {
+    await requireFirmAccess(ctx, firmId);
     const message = selectedOptions?.length
       ? `Options: ${selectedOptions.join(", ")}${otherFeedback ? `. Other: ${otherFeedback}` : ""}`
       : otherFeedback ?? undefined;
@@ -80,9 +85,11 @@ export const insertMonthlyFeedback = mutation({
   },
 });
 
+// Admin-only: called by main-website DashboardAdmin (unscoped, all firms).
 export const listAllFeedback = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const all = await ctx.db.query("feedback").collect();
     const filtered = all
       .filter((f) => f.type === "feedback")
@@ -103,6 +110,7 @@ export const listAllFeedback = query({
 export const getFeedbackStats = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const all = await ctx.db
       .query("feedback")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))

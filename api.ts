@@ -176,6 +176,12 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
+    getFirmByApiKey: FunctionReference<
+      "query",
+      "public",
+      { apiKey: string },
+      any
+    >;
     getFirmByWorkosUserId: FunctionReference<
       "query",
       "public",

@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireFirmAccess, requireSubmissionAccess } from "./auth";
 
+// Most submission functions are called by form-website (anonymous) using
+// submissionId from the URL. URL-as-token model: leave open. Dashboard-only
+// surfaces (listClientSubmissions, updateSubmissionFromDashboard,
+// deleteSubmission) require firm membership.
 export const getSubmission = query({
   args: { submissionId: v.id("submissions") },
   handler: async (ctx, { submissionId }) => {
@@ -184,6 +189,7 @@ export const completeSubmission = mutation({
 export const listClientSubmissions = query({
   args: { firmId: v.id("firms"), clientId: v.id("clients") },
   handler: async (ctx, { firmId, clientId }) => {
+    await requireFirmAccess(ctx, firmId);
     const submissions = await ctx.db
       .query("submissions")
       .withIndex("by_client", (q) => q.eq("clientId", clientId))
@@ -216,6 +222,7 @@ export const updateSubmissionFromDashboard = mutation({
     }),
   },
   handler: async (ctx, { submissionId, updates }) => {
+    await requireSubmissionAccess(ctx, submissionId);
     await ctx.db.patch(submissionId, updates);
   },
 });
@@ -223,6 +230,7 @@ export const updateSubmissionFromDashboard = mutation({
 export const deleteSubmission = mutation({
   args: { submissionId: v.id("submissions") },
   handler: async (ctx, { submissionId }) => {
+    await requireSubmissionAccess(ctx, submissionId);
     await ctx.db.delete(submissionId);
   },
 });

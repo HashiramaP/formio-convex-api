@@ -1,13 +1,19 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireAdmin, requireWorkosUserId, AuthError } from "./auth";
 
-// All admin-only functions live here. Authorization is enforced at the
-// caller (admin website + backend); these handlers do not double-check
-// because the public WorkOS-gated client already filters by admin email.
+// Admin-only functions. Every handler calls `requireAdmin(ctx)` which checks
+// (a) the request carries a valid WorkOS JWT and (b) the JWT's email is in the
+// ADMIN_EMAILS Convex env var. The previous version trusted the admin-website
+// client to filter by email — bypassable from the browser console.
+//
+// `attachWorkosUserToFirm` is the one exception: a brand-new user has to claim
+// their pending firm before they have any role, so it requires only auth.
 
 export const listAllFirms = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const firms = await ctx.db.query("firms").collect();
     return firms.sort((a, b) => b._creationTime - a._creationTime);
   },
@@ -16,6 +22,7 @@ export const listAllFirms = query({
 export const getFirm = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireAdmin(ctx);
     return await ctx.db.get(firmId);
   },
 });
@@ -34,6 +41,7 @@ export const updateFirm = mutation({
     }),
   },
   handler: async (ctx, { firmId, updates }) => {
+    await requireAdmin(ctx);
     const patch: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(updates)) {
       if (value === undefined) continue;
@@ -64,6 +72,7 @@ export const createPendingFirm = mutation({
     monthlyClientsRemaining: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const email = normalizeEmail(args.pendingEmail);
 
     const existingPending = await ctx.db
@@ -94,6 +103,7 @@ export const attachInvitationToFirm = mutation({
     invitationSentAt: v.number(),
   },
   handler: async (ctx, { firmId, workosInvitationId, invitationSentAt }) => {
+    await requireAdmin(ctx);
     await ctx.db.patch(firmId, { workosInvitationId, invitationSentAt });
     return await ctx.db.get(firmId);
   },
@@ -105,6 +115,15 @@ export const attachWorkosUserToFirm = mutation({
     workosUserId: v.string(),
   },
   handler: async (ctx, { pendingEmail, workosUserId }) => {
+    // Self-claim only: a freshly-signed-in user attaching themselves to their
+    // pending firm. Anything else (admin claiming on behalf of someone) goes
+    // through createPendingFirm + attachInvitationToFirm.
+    const callerWorkosId = await requireWorkosUserId(ctx);
+    if (callerWorkosId !== workosUserId) {
+      throw new AuthError(
+        "Unauthorized: workosUserId arg must match the JWT subject (self-claim only)",
+      );
+    }
     const email = normalizeEmail(pendingEmail);
 
     // Idempotent: if the user already owns a firm, return it.
@@ -131,6 +150,7 @@ export const attachWorkosUserToFirm = mutation({
 export const cancelPendingFirm = mutation({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireAdmin(ctx);
     const firm = await ctx.db.get(firmId);
     if (!firm) return;
     if (firm.workosUserId) {
@@ -145,6 +165,7 @@ export const cancelPendingFirm = mutation({
 export const deleteFirm = mutation({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireAdmin(ctx);
     await ctx.db.delete(firmId);
   },
 });
@@ -152,6 +173,7 @@ export const deleteFirm = mutation({
 export const listAllClients = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const clients = await ctx.db.query("clients").collect();
     return clients.sort((a, b) => b._creationTime - a._creationTime);
   },
@@ -160,6 +182,7 @@ export const listAllClients = query({
 export const listAllSubmissions = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const submissions = await ctx.db.query("submissions").collect();
     return submissions.sort((a, b) => b._creationTime - a._creationTime);
   },
@@ -168,6 +191,7 @@ export const listAllSubmissions = query({
 export const listAllErrorLogs = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit }) => {
+    await requireAdmin(ctx);
     const all = await ctx.db.query("errorLogs").collect();
     const sorted = all.sort((a, b) => b._creationTime - a._creationTime);
     return limit ? sorted.slice(0, limit) : sorted;
@@ -180,6 +204,7 @@ export const listAllErrorLogs = query({
 export const getAllFirmsSubmissionStats = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const firms = await ctx.db.query("firms").collect();
     const submissions = await ctx.db.query("submissions").collect();
 
@@ -220,6 +245,7 @@ export const getAllFirmsSubmissionStats = query({
 export const getGlobalSubmissionStats = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const submissions = await ctx.db.query("submissions").collect();
 
     const now = Date.now();
@@ -254,6 +280,7 @@ export const getGlobalSubmissionStats = query({
 export const getAiUsageByFirm = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const logs = await ctx.db.query("aiUsageLogs").collect();
 
     const byFirm: Record<
@@ -286,6 +313,7 @@ export const getAiUsageByFirm = query({
 export const getFirmClientsDetail = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireAdmin(ctx);
     const clients = await ctx.db
       .query("clients")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -362,6 +390,7 @@ export const getFirmClientsDetail = query({
 export const listAllFormFeedback = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const all = await ctx.db.query("feedback").collect();
     const formRatings = all.filter((f) => f.type === "form_rating");
 

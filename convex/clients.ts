@@ -1,6 +1,10 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireFirmAccess } from "./auth";
 
+// `getClient`, `getClientByLegacyId`, and `recordEmailConsent` are called by
+// form-website (anonymous) using the clientId from the URL. URL-as-token model:
+// leave open. Everything else is dashboard-scoped and requires firm membership.
 export const getClient = query({
   args: { clientId: v.id("clients") },
   handler: async (ctx, { clientId }) => {
@@ -39,6 +43,7 @@ export const getClientByLegacyId = query({
 export const listClients = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const clients = await ctx.db
       .query("clients")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -75,6 +80,7 @@ export const listClients = query({
 export const getClientForFirm = query({
   args: { firmId: v.id("firms"), clientId: v.id("clients") },
   handler: async (ctx, { firmId, clientId }) => {
+    await requireFirmAccess(ctx, firmId);
     const client = await ctx.db.get(clientId);
     if (!client || client.firmId !== firmId) return null;
 
@@ -91,6 +97,7 @@ export const getClientForFirm = query({
 export const listClientsWithActiveRevisions = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const supplements = await ctx.db
       .query("supplementRequests")
       .withIndex("by_firm_status", (q) => q.eq("firmId", firmId))
@@ -110,6 +117,7 @@ export const insertClient = mutation({
     lastName: v.string(),
   },
   handler: async (ctx, { firmId, firstName, lastName }) => {
+    await requireFirmAccess(ctx, firmId);
     const id = await ctx.db.insert("clients", {
       firmId,
       firstName,
@@ -140,6 +148,7 @@ export const updateClient = mutation({
     }),
   },
   handler: async (ctx, { firmId, clientId, updates }) => {
+    await requireFirmAccess(ctx, firmId);
     const client = await ctx.db.get(clientId);
     if (!client || client.firmId !== firmId) return null;
     await ctx.db.patch(clientId, updates);
@@ -153,6 +162,7 @@ export const deleteClient = mutation({
     clientId: v.id("clients"),
   },
   handler: async (ctx, { firmId, clientId }) => {
+    await requireFirmAccess(ctx, firmId);
     const client = await ctx.db.get(clientId);
     if (!client || client.firmId !== firmId) return false;
     await ctx.db.delete(clientId);

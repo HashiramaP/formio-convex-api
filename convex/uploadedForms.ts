@@ -1,5 +1,8 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireCurrentFirm, requireFirmAccess, AuthError } from "./auth";
+
+// uploadedForms is dashboard-only (main-website bulk upload). All firm-scoped.
 
 export const insertUploadedForm = mutation({
   args: {
@@ -11,6 +14,7 @@ export const insertUploadedForm = mutation({
     legalDocumentName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireFirmAccess(ctx, args.firmId);
     return await ctx.db.insert("uploadedForms", args);
   },
 });
@@ -18,6 +22,7 @@ export const insertUploadedForm = mutation({
 export const listUploadedForms = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const forms = await ctx.db
       .query("uploadedForms")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -29,6 +34,7 @@ export const listUploadedForms = query({
 export const listActiveUploads = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const forms = await ctx.db
       .query("uploadedForms")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -49,6 +55,11 @@ export const updateUploadStatus = mutation({
     }),
   },
   handler: async (ctx, { id, updates }) => {
+    const firm = await requireCurrentFirm(ctx);
+    const existing = await ctx.db.get(id);
+    if (!existing || existing.firmId !== firm._id) {
+      throw new AuthError("Unauthorized: upload not in caller's firm");
+    }
     await ctx.db.patch(id, updates);
   },
 });
@@ -56,6 +67,7 @@ export const updateUploadStatus = mutation({
 export const deleteBatch = mutation({
   args: { firmId: v.id("firms"), batchId: v.string() },
   handler: async (ctx, { firmId, batchId }) => {
+    await requireFirmAccess(ctx, firmId);
     const forms = await ctx.db
       .query("uploadedForms")
       .withIndex("by_firm_batch", (q) =>

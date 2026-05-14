@@ -5,6 +5,24 @@ import { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
 
+// Length-independent constant-time string compare. Standard `!==` can leak the
+// shared secret over a network via response-time deltas on early-mismatch bytes.
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const aBytes = enc.encode(a);
+  const bBytes = enc.encode(b);
+  // Always run the same number of comparisons. Length mismatch flips the result
+  // but still runs the loop so attackers can't infer length.
+  const len = Math.max(aBytes.length, bBytes.length);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < len; i++) {
+    const av = i < aBytes.length ? aBytes[i] : 0;
+    const bv = i < bBytes.length ? bBytes[i] : 0;
+    diff |= av ^ bv;
+  }
+  return diff === 0;
+}
+
 // POST /uploadFilledPdf
 //
 // Called by the IRCC XFA fill worker (Windows VM running Acrobat + AHK) after
@@ -22,7 +40,8 @@ http.route({
     if (!expected) {
       return new Response("Server missing PDF_FILLER_WEBHOOK_SECRET", { status: 500 });
     }
-    if (request.headers.get("authorization") !== `Bearer ${expected}`) {
+    const provided = request.headers.get("authorization") ?? "";
+    if (!timingSafeEqual(provided, `Bearer ${expected}`)) {
       return new Response("Unauthorized", { status: 401 });
     }
 

@@ -29,7 +29,8 @@ export default defineSchema({
     emailOverrides: v.optional(v.record(v.string(), v.string())),
   })
     .index("by_workosUserId", ["workosUserId"])
-    .index("by_pendingEmail", ["pendingEmail"]),
+    .index("by_pendingEmail", ["pendingEmail"])
+    .index("by_apiKey", ["apiKey"]),
 
   clients: defineTable({
     firmId: v.id("firms"),

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, internalQuery } from "./_generated/server";
 
 export const insertFirms = internalMutation({
   args: {
@@ -561,6 +561,139 @@ export const migrateFirmsSchema = internalMutation({
       updated++;
     }
     return { updated, total: firms.length };
+  },
+});
+
+// Returns rows of a table with the identifier fields used by scripts/migrate-prod.ts to
+// recover Supabase -> Convex _id mappings after `npx convex import`. Default sort is by
+// _creationTime ascending — same order we wrote in the JSONL — so callers can pair
+// positionally with their Supabase source array.
+export const getRowsForMapping = internalQuery({
+  args: { tableName: v.string() },
+  handler: async (ctx, { tableName }) => {
+    const docs = await ctx.db.query(tableName as any).collect();
+    return docs.map((d: any) => ({
+      _id: d._id,
+      _creationTime: d._creationTime,
+      workosUserId: d.workosUserId,
+      legacyId: d.legacyId,
+      externalId: d.externalId,
+      templateId: d.templateId,
+    }));
+  },
+});
+
+// Returns rows with storage-related fields. Used by scripts/migrate-storage.ts to
+// pair Convex rows with Supabase storage objects (positional by _creationTime, then
+// to skip rows that already have a storageId on resume).
+export const getStorageRows = internalQuery({
+  args: { tableName: v.string() },
+  handler: async (ctx, { tableName }) => {
+    const docs = await ctx.db.query(tableName as any).collect();
+    return docs.map((d: any) => ({
+      _id: d._id,
+      _creationTime: d._creationTime,
+      storageId: d.storageId,
+      status: d.status,
+      name: d.name,
+    }));
+  },
+});
+
+// Specialized helper for submissionDocuments — also returns submissionId so the
+// storage script can match Convex docs to Supabase rows by (parent submission's legacyId, name)
+// instead of fragile positional matching (Convex has post-migration live uploads).
+export const getSubmissionDocsForStorage = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const docs = await ctx.db.query("submissionDocuments").collect();
+    return docs.map((d) => ({
+      _id: d._id,
+      storageId: d.storageId,
+      name: d.name,
+      submissionId: d.submissionId,
+    }));
+  },
+});
+
+// Used by scripts/migrate-storage.ts to attach a freshly-uploaded Convex storage
+// object to a row. table is restricted to the 3 storage-bearing tables.
+export const patchStorageId = internalMutation({
+  args: {
+    table: v.union(
+      v.literal("submissionDocuments"),
+      v.literal("generatedLegalDocs"),
+      v.literal("uploadedForms")
+    ),
+    convexId: v.string(),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, { convexId, storageId }) => {
+    await ctx.db.patch(convexId as any, { storageId });
+  },
+});
+
+// For generatedLegalDocs whose Supabase file_path references a missing storage object
+// (pre-existing Supabase breakage — file deleted but row kept). Sets status='error' so
+// the frontend (DashboardClientDetail.tsx) stops showing them as 'generating' forever.
+export const markGenLegalDocError = internalMutation({
+  args: { convexId: v.string() },
+  handler: async (ctx, { convexId }) => {
+    await ctx.db.patch(convexId as any, { status: "error" });
+  },
+});
+
+// One-shot fix for the prod migration that wrote French status strings on clients.
+// Maps Supabase numeric IDs were translated as nouveau_mandat/en_cours/soumis but the
+// frontend (DashboardHome.tsx, DashboardClients.tsx, etc.) compares against new/in_progress/submitted.
+// Idempotent: rows that are already in the target form are skipped.
+export const remapClientStatuses = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const remap: Record<string, string> = {
+      nouveau_mandat: "new",
+      en_cours: "in_progress",
+      soumis: "submitted",
+    };
+    const clients = await ctx.db.query("clients").collect();
+    let updated = 0;
+    const counts: Record<string, number> = {};
+    for (const c of clients) {
+      const target = c.status ? remap[c.status] : undefined;
+      if (target && target !== c.status) {
+        await ctx.db.patch(c._id, { status: target });
+        updated++;
+        counts[target] = (counts[target] ?? 0) + 1;
+      }
+    }
+    return { updated, total: clients.length, counts };
+  },
+});
+
+// Second pass for formDefinitions self-references (sourceFormId, baseFormId).
+// migrate-prod.ts imports formDefinitions with these fields blank, builds the
+// supabaseFormId -> Convex _id map, then calls this with already-resolved Convex IDs.
+export const patchFormDefinitionRefs = internalMutation({
+  args: {
+    patches: v.array(
+      v.object({
+        convexId: v.string(),
+        sourceFormId: v.optional(v.string()),
+        baseFormId: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, { patches }) => {
+    let updated = 0;
+    for (const { convexId, sourceFormId, baseFormId } of patches) {
+      const update: Record<string, unknown> = {};
+      if (sourceFormId) update.sourceFormId = sourceFormId;
+      if (baseFormId) update.baseFormId = baseFormId;
+      if (Object.keys(update).length === 0) continue;
+      await ctx.db.patch(convexId as any, update as any);
+      updated++;
+    }
+    return { updated, total: patches.length };
   },
 });
 

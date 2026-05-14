@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { requireCurrentFirm, AuthError } from "./auth";
+
+// `getFormQuestions`, `getDistinctSections`, `getQuestionsByExternalIds` are
+// read by form-website (anonymous) when rendering the form for clients. Leave
+// open. Mutations are dashboard-only (main-website form editor).
 
 export const getFormQuestions = query({
   args: { formDefinitionId: v.id("formDefinitions") },
@@ -172,12 +177,38 @@ export const upsertQuestionsBatch = mutation({
     ),
   },
   handler: async (ctx, { questions }) => {
+    const firm = await requireCurrentFirm(ctx);
+    // Each question's firmId (when provided) must match the caller's firm.
+    // `undefined` firmId means a global/catalog question — only admins should
+    // write those; we forbid the unauthenticated path entirely.
     for (const q of questions) {
+      if (q.firmId && q.firmId !== firm._id) {
+        throw new AuthError(
+          "Unauthorized: question firmId must match caller's firm",
+        );
+      }
+      if (!q.firmId) {
+        throw new AuthError(
+          "Cannot write global/catalog questions from the dashboard",
+        );
+      }
       const existing = await ctx.db
         .query("questions")
         .withIndex("by_externalId", (idx) => idx.eq("externalId", q.externalId))
         .unique();
       if (existing) {
+        // Block tenant cross-writes: if the existing row is global (no firmId)
+        // or belongs to another firm, refuse the update.
+        if (existing.firmId && existing.firmId !== firm._id) {
+          throw new AuthError(
+            "Unauthorized: question belongs to a different firm",
+          );
+        }
+        if (!existing.firmId) {
+          throw new AuthError(
+            "Cannot overwrite catalog questions from the dashboard",
+          );
+        }
         const { externalId: _ignored, ...updates } = q;
         await ctx.db.patch(existing._id, updates);
       } else {
@@ -208,6 +239,12 @@ export const replaceFormQuestions = mutation({
     ),
   },
   handler: async (ctx, { formDefinitionId, rows }) => {
+    const firm = await requireCurrentFirm(ctx);
+    const form = await ctx.db.get(formDefinitionId);
+    if (!form) throw new AuthError("Form not found");
+    if (!form.firmId || form.firmId !== firm._id) {
+      throw new AuthError("Unauthorized: form not in caller's firm");
+    }
     const existing = await ctx.db
       .query("formQuestions")
       .withIndex("by_formDefinition", (q) =>

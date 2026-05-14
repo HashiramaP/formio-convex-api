@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as aiUsageLogs from "../aiUsageLogs.js";
+import type * as auth from "../auth.js";
 import type * as clients from "../clients.js";
 import type * as crons from "../crons.js";
 import type * as errorLogs from "../errorLogs.js";
@@ -35,6 +36,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   aiUsageLogs: typeof aiUsageLogs;
+  auth: typeof auth;
   clients: typeof clients;
   crons: typeof crons;
   errorLogs: typeof errorLogs;

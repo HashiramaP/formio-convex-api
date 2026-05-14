@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { requireAdmin, requireFirmAccess } from "./auth";
 
+// `logOcrTransaction` is called by form-website when the OCR action runs during
+// anonymous form-fill — leave open. Other surfaces are firm-scoped or admin.
 export const logOcrTransaction = mutation({
   args: {
     firmId: v.id("firms"),
@@ -19,6 +22,7 @@ export const logOcrTransaction = mutation({
 export const listForFirm = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const logs = await ctx.db
       .query("aiUsageLogs")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -30,6 +34,7 @@ export const listForFirm = query({
 export const getFormStats = query({
   args: { firmId: v.id("firms") },
   handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
     const submissions = await ctx.db
       .query("submissions")
       .withIndex("by_firm", (q) => q.eq("firmId", firmId))
@@ -43,9 +48,12 @@ export const getFormStats = query({
   },
 });
 
+// Admin-only: dashboard-wide AI cost view (called by main-website's
+// DashboardAdmin page).
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const logs = await ctx.db.query("aiUsageLogs").collect();
     return await Promise.all(
       logs.map(async (log) => {
