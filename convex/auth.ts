@@ -58,6 +58,19 @@ export async function requireFirmAccess(
   return firm;
 }
 
+// WorkOS AuthKit JWTs don't populate the standard OIDC `email` claim —
+// the user's email lands in the actor-subject (`act.sub`) claim instead. We
+// check both: prefer the standard claim if a future WorkOS version emits it,
+// fall back to `act.sub` which is what AuthKit 0.16.x actually issues.
+function extractEmail(identity: { email?: string }): string | null {
+  if (identity.email) return identity.email.toLowerCase();
+  const actSub = (identity as Record<string, unknown>)["act.sub"];
+  if (typeof actSub === "string" && actSub.includes("@")) {
+    return actSub.toLowerCase();
+  }
+  return null;
+}
+
 // Throws unless the caller's WorkOS-account email is in the ADMIN_EMAILS env
 // var (comma-separated, case-insensitive). This is the server-side gate for
 // admin-dashboard queries — the admin-website already checks the same allowlist
@@ -76,7 +89,7 @@ export async function requireAdmin(ctx: Ctx): Promise<void> {
       "Server misconfigured: ADMIN_EMAILS env var is empty (set with `npx convex env set ADMIN_EMAILS a@x.com,b@y.com`)",
     );
   }
-  const email = (identity.email ?? "").toLowerCase();
+  const email = extractEmail(identity);
   if (!email || !allowlist.includes(email)) {
     throw new AuthError("Unauthorized: not in admin allowlist");
   }
