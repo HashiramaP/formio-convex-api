@@ -30,8 +30,12 @@ export const getFormQuestions = query({
       );
     }
 
-    // Path 1: Self-contained — only this form's questions
-    if (formDef.isSelfContained) {
+    // Path 1: Self-contained — only this form's questions.
+    // A form is truly self-contained only when isSelfContained=true AND no
+    // baseFormId is set. If baseFormId is present, the consultant explicitly
+    // linked a base form and we must merge it even if isSelfContained was not
+    // cleared (e.g. migrated data, or forkForm default).
+    if (formDef.isSelfContained && !formDef.baseFormId) {
       const questions = await loadFormQuestions(formDefinitionId);
       return questions.sort((a, b) => a.orderIndex - b.orderIndex);
     }
@@ -67,9 +71,12 @@ export const getFormQuestions = query({
       );
     }
 
-    return [...baseQuestions, ...ownQuestions].sort(
-      (a, b) => a.orderIndex - b.orderIndex,
-    );
+    // Order base sections first (sorted by their own orderIndex), then own
+    // questions (sorted by their orderIndex). Merging the two arrays before
+    // sorting interleaves them because both use orderIndex 1..N.
+    baseQuestions.sort((a, b) => a.orderIndex - b.orderIndex);
+    ownQuestions.sort((a, b) => a.orderIndex - b.orderIndex);
+    return [...baseQuestions, ...ownQuestions];
   },
 });
 
