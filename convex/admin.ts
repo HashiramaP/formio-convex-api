@@ -1,11 +1,12 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { requireAdmin, requireWorkosUserId, AuthError } from "./auth";
+import { isAdmin, requireAdmin, requireWorkosUserId, AuthError } from "./auth";
 
 // Admin-only functions. Every handler calls `requireAdmin(ctx)` which checks
-// (a) the request carries a valid WorkOS JWT and (b) the JWT's email is in the
-// ADMIN_EMAILS Convex env var. The previous version trusted the admin-website
-// client to filter by email — bypassable from the browser console.
+// (a) the request carries a valid WorkOS JWT and (b) the JWT's `sub` claim is
+// in the ADMIN_WORKOS_USER_IDS Convex env var. The previous version trusted
+// the admin-website client to filter by email — bypassable from the browser
+// console.
 //
 // `attachWorkosUserToFirm` is the one exception: a brand-new user has to claim
 // their pending firm before they have any role, so it requires only auth.
@@ -382,6 +383,15 @@ export const getFirmClientsDetail = query({
       }),
     );
   },
+});
+
+// Exposes the admin allowlist check as a Convex query so the admin-website
+// client can gate its UI off the same source of truth as the server. Set
+// ADMIN_WORKOS_USER_IDS on the Convex deployment via `npx convex env set`.
+// Misconfig propagates as AuthError.
+export const isCurrentUserAdmin = query({
+  args: {},
+  handler: async (ctx) => isAdmin(ctx),
 });
 
 // Admin: form-feedback rows with the client/submission context flattened.
