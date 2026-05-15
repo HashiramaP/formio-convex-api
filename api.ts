@@ -715,12 +715,6 @@ export type PublicApiType = {
     >;
   };
   admin: {
-    isCurrentUserAdmin: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      boolean
-    >;
     listAllFirms: FunctionReference<
       "query",
       "public",
@@ -826,6 +820,12 @@ export type PublicApiType = {
       "query",
       "public",
       { firmId: Id<"firms"> },
+      any
+    >;
+    isCurrentUserAdmin: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
       any
     >;
     listAllFormFeedback: FunctionReference<
