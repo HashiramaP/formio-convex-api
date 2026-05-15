@@ -11,7 +11,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "preserve",
-    "allowJs": false
+    "allowJs": false,
+    "types": ["node"]
   },
   "include": ["index.ts", "api.ts", "convex/**/*"],
   "exclude": ["node_modules", "convex/_generated"]
