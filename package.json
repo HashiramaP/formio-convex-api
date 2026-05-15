@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.105.3",
+    "@types/node": "^25.8.0",
     "convex": "^1.17.0",
     "convex-helpers": "^0.1.70",
     "dotenv-cli": "^7.4.4",
