@@ -80,6 +80,37 @@ export const getFormQuestions = query({
   },
 });
 
+/**
+ * Returns ONLY the form's own questions (no base form merge). Used by the
+ * admin form editor to display what the form itself contains, separate from
+ * the base sections that get merged in at render time for the client wizard.
+ */
+export const getOwnFormQuestions = query({
+  args: { formDefinitionId: v.id("formDefinitions") },
+  handler: async (ctx, { formDefinitionId }) => {
+    const formDef = await ctx.db.get(formDefinitionId);
+    if (!formDef) return [];
+
+    const fqs = await ctx.db
+      .query("formQuestions")
+      .withIndex("by_formDefinition", (q) =>
+        q.eq("formDefinitionId", formDefinitionId),
+      )
+      .collect();
+
+    const withQuestions = await Promise.all(
+      fqs.map(async (fq) => {
+        const question = await ctx.db
+          .query("questions")
+          .withIndex("by_externalId", (q) => q.eq("externalId", fq.questionKey))
+          .unique();
+        return { ...fq, question: question ?? undefined };
+      }),
+    );
+    return withQuestions.sort((a, b) => a.orderIndex - b.orderIndex);
+  },
+});
+
 export const getDistinctSections = query({
   args: { formDefinitionId: v.id("formDefinitions") },
   handler: async (ctx, { formDefinitionId }) => {

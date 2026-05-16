@@ -37,6 +37,73 @@ export const getSubmission = query({
   },
 });
 
+/**
+ * Init multiple linked submissions for a grouped form (e.g. Parrainage Couple
+ * splits into Couple + Demandeur + Répondant). Each gets its own row but
+ * shares the same groupId, so the dashboard can render them as a single
+ * client case with multiple links.
+ */
+export const initGroupedSubmissions = mutation({
+  args: {
+    clientId: v.id("clients"),
+    firmId: v.id("firms"),
+    title: v.string(),
+    formGroup: v.string(),
+    forms: v.array(
+      v.object({
+        formDefinitionId: v.id("formDefinitions"),
+        formType: v.optional(v.string()),
+      }),
+    ),
+  },
+  handler: async (ctx, { clientId, firmId, title, formGroup, forms }) => {
+    // Idempotency: if grouped submissions already exist for this client with
+    // matching formGroup metadata, return them rather than creating duplicates.
+    const existing = await ctx.db
+      .query("submissions")
+      .withIndex("by_client", (q) => q.eq("clientId", clientId))
+      .collect();
+    const existingGroup = existing.find(
+      (s) => s.groupId && s.metadata && (s.metadata as any).formGroup === formGroup,
+    );
+    if (existingGroup?.groupId) {
+      const groupSubs = existing.filter((s) => s.groupId === existingGroup.groupId);
+      return {
+        alreadyExists: true as const,
+        groupId: existingGroup.groupId,
+        submissions: groupSubs.map((s) => ({
+          submissionId: s._id,
+          formDefinitionId: s.formDefinitionId,
+          formType: s.formType,
+        })),
+      };
+    }
+
+    const groupId = crypto.randomUUID();
+    const submissions = [];
+    for (const f of forms) {
+      const id = await ctx.db.insert("submissions", {
+        clientId,
+        firmId,
+        title,
+        formType: f.formType,
+        formDefinitionId: f.formDefinitionId,
+        status: "in_progress",
+        answers: {},
+        metadata: { formGroup },
+        groupId,
+      });
+      submissions.push({
+        submissionId: id,
+        formDefinitionId: f.formDefinitionId,
+        formType: f.formType,
+      });
+    }
+
+    return { alreadyExists: false as const, groupId, submissions };
+  },
+});
+
 export const initSubmission = mutation({
   args: {
     clientId: v.id("clients"),
