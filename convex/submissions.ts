@@ -122,6 +122,12 @@ export const initSubmission = mutation({
       return { alreadySubmitted: true as const, submissionId: submitted._id };
     }
 
+    // Resolve formDefinitionId from the client so the wizard knows which form
+    // to render when the link is /app/{submissionId} (otherwise it falls back
+    // to static base questions and never asks the form-specific questions).
+    const client = await ctx.db.get(clientId);
+    const formDefinitionId = client?.primaryFormDefinitionId;
+
     const inProgress = await ctx.db
       .query("submissions")
       .withIndex("by_client", (q) => q.eq("clientId", clientId))
@@ -130,6 +136,11 @@ export const initSubmission = mutation({
       .first();
 
     if (inProgress) {
+      // Backfill formDefinitionId on legacy in_progress submissions that were
+      // created before this field was tracked here.
+      if (!inProgress.formDefinitionId && formDefinitionId) {
+        await ctx.db.patch(inProgress._id, { formDefinitionId });
+      }
       return {
         alreadySubmitted: false as const,
         submissionId: inProgress._id,
@@ -146,6 +157,7 @@ export const initSubmission = mutation({
       firmId,
       title,
       formType,
+      formDefinitionId,
       status: "in_progress",
       answers: {},
       metadata: {},
