@@ -533,7 +533,7 @@ function buildPayloads(source: any): BuildResult {
     } else if (q.questionType === "fileupload") {
       row.type = "document";
       row.documentConfig = {
-        acceptedFormats: ["pdf", "jpg", "jpeg", "png", "heic"],
+        acceptedFormats: ["application/pdf", "image/jpeg", "image/png", "image/heic"],
         maxSizeMB: 10,
       };
     } else if (q.questionType === "text") {

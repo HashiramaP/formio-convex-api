@@ -661,6 +661,61 @@ export const setGroupPrimaries = internalMutation({
   },
 });
 
+/**
+ * One-off, idempotent fix: the parrainage-enfant seed script wrote
+ * documentConfig.acceptedFormats as file extensions (["pdf","jpg",...])
+ * but the formioform wizard validates uploads via MIME types
+ * (file.type). This patches existing document questions on the form
+ * to use the correct MIME-type list.
+ *
+ * Run once: `npx convex run migrations:fixParrainageEnfantDocumentConfig`.
+ * Safe to re-run: only patches rows whose acceptedFormats are not
+ * already MIME types (no "/" in them).
+ */
+export const fixParrainageEnfantDocumentConfig = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const form = await ctx.db
+      .query("formDefinitions")
+      .withIndex("by_slug", (q) => q.eq("slug", "parrainage-enfant"))
+      .first();
+    if (!form) return { found: false, patched: 0, skipped: 0 };
+
+    // Find all form_questions linked to this form
+    const formQuestions = await ctx.db
+      .query("formQuestions")
+      .withIndex("by_formDefinition", (q) => q.eq("formDefinitionId", form._id))
+      .collect();
+
+    let patched = 0;
+    let skipped = 0;
+    const newFormats = ["application/pdf", "image/jpeg", "image/png", "image/heic"];
+
+    for (const fq of formQuestions) {
+      // formQuestions link to questions via questionKey -> questions.externalId
+      const question = await ctx.db
+        .query("questions")
+        .withIndex("by_externalId", (q) => q.eq("externalId", fq.questionKey))
+        .first();
+      if (!question || question.type !== "document") continue;
+      const cfg = (question as any).documentConfig;
+      if (!cfg) { skipped++; continue; }
+      // Idempotency: skip if already MIME types (contains "/")
+      const alreadyMime = Array.isArray(cfg.acceptedFormats)
+        && cfg.acceptedFormats.length > 0
+        && cfg.acceptedFormats.every((f: string) => f.includes("/"));
+      if (alreadyMime) { skipped++; continue; }
+
+      await ctx.db.patch(question._id, {
+        documentConfig: { ...cfg, acceptedFormats: newFormats },
+      } as any);
+      patched++;
+    }
+
+    return { found: true, formId: form._id, patched, skipped };
+  },
+});
+
 // Returns rows of a table with the identifier fields used by scripts/migrate-prod.ts to
 // recover Supabase -> Convex _id mappings after `npx convex import`. Default sort is by
 // _creationTime ascending — same order we wrote in the JSONL — so callers can pair
