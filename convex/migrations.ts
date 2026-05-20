@@ -603,6 +603,48 @@ export const migrateFirmsSchema = internalMutation({
   },
 });
 
+/**
+ * One-off, idempotent migration: sets isGroupPrimary=true on the parrainage
+ * familial Demandeur principal form. Required so getDistinctSections and
+ * getFormQuestions can identify the single primary sub-form in a formGroup
+ * that should inherit base sections (Répondant and Couple do not).
+ *
+ * Run once: `npx convex run migrations:setGroupPrimaries`.
+ * Safe to re-run: only patches forms where the flag isn't already true.
+ */
+export const setGroupPrimaries = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const PRIMARY_SLUGS = ["parrainage-demandeur"];
+    const updated: string[] = [];
+    const skipped: string[] = [];
+    const notFound: string[] = [];
+
+    for (const slug of PRIMARY_SLUGS) {
+      const forms = await ctx.db
+        .query("formDefinitions")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .collect();
+
+      if (forms.length === 0) {
+        notFound.push(slug);
+        continue;
+      }
+
+      for (const form of forms) {
+        if (form.isGroupPrimary === true) {
+          skipped.push(`${slug} (${form._id}) — already primary`);
+          continue;
+        }
+        await ctx.db.patch(form._id, { isGroupPrimary: true });
+        updated.push(`${slug} (${form._id})`);
+      }
+    }
+
+    return { updated, skipped, notFound };
+  },
+});
+
 // Returns rows of a table with the identifier fields used by scripts/migrate-prod.ts to
 // recover Supabase -> Convex _id mappings after `npx convex import`. Default sort is by
 // _creationTime ascending — same order we wrote in the JSONL — so callers can pair
