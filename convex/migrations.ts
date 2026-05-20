@@ -604,6 +604,22 @@ export const migrateFirmsSchema = internalMutation({
 });
 
 /**
+ * Idempotency helper for one-off seed scripts (e.g. seedParrainageEnfant.ts).
+ * Returns whether a formDefinition with the given slug already exists, plus
+ * its _id so callers can abort cleanly instead of double-inserting.
+ */
+export const findFormDefinitionBySlug = internalQuery({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const form = await ctx.db
+      .query("formDefinitions")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+    return { found: form !== null, id: form ? (form._id as string) : null };
+  },
+});
+
+/**
  * One-off, idempotent migration: sets isGroupPrimary=true on the parrainage
  * familial Demandeur principal form. Required so getDistinctSections and
  * getFormQuestions can identify the single primary sub-form in a formGroup
