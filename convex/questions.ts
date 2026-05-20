@@ -30,6 +30,14 @@ export const getFormQuestions = query({
       );
     }
 
+    // Grouped sub-form that is NOT the group primary → only its own questions.
+    // Mirrors the same rule in getDistinctSections so the dashboard SectionToggle
+    // count and the client wizard render the same set of questions.
+    if (formDef.formGroup && !formDef.isGroupPrimary) {
+      const questions = await loadFormQuestions(formDefinitionId);
+      return questions.sort((a, b) => a.orderIndex - b.orderIndex);
+    }
+
     // Path 1: Self-contained — only this form's questions.
     // A form is truly self-contained only when isSelfContained=true AND no
     // baseFormId is set. If baseFormId is present, the consultant explicitly
@@ -131,6 +139,16 @@ export const getDistinctSections = query({
       Array.from(
         new Set(rows.map((r) => r.section).filter((s): s is string => !!s)),
       );
+
+    // Grouped sub-form that is NOT the group primary → never inherit base sections.
+    // Only the primary sub-form in a formGroup gets base sections merged. Set by
+    // the one-off `migrations:setGroupPrimaries` for Demandeur principal.
+    if (formDef.formGroup && !formDef.isGroupPrimary) {
+      return {
+        baseSections: [],
+        demandeSections: uniqueSections(ownFqs),
+      };
+    }
 
     if (formDef.isSelfContained && !formDef.baseFormId) {
       return {

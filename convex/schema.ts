@@ -77,6 +77,7 @@ export default defineSchema({
     category: v.optional(v.string()),
     formGroup: v.optional(v.string()),
     groupLabel: v.optional(v.string()),
+    isGroupPrimary: v.optional(v.boolean()),
     firmId: v.optional(v.id("firms")),
     isCustom: v.boolean(),
     sourceFormId: v.optional(v.id("formDefinitions")),
