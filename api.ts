@@ -442,6 +442,7 @@ export type PublicApiType = {
           formDefinitionId: Id<"formDefinitions">;
           formType?: string;
         }>;
+        preferredLanguage?: string;
         title: string;
       },
       any
@@ -453,6 +454,7 @@ export type PublicApiType = {
         clientId: Id<"clients">;
         firmId: Id<"firms">;
         formType?: string;
+        preferredLanguage?: string;
         title: string;
       },
       any

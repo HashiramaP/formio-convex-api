@@ -55,8 +55,9 @@ export const initGroupedSubmissions = mutation({
         formType: v.optional(v.string()),
       }),
     ),
+    preferredLanguage: v.optional(v.string()),
   },
-  handler: async (ctx, { clientId, firmId, title, formGroup, forms }) => {
+  handler: async (ctx, { clientId, firmId, title, formGroup, forms, preferredLanguage }) => {
     // Idempotency: if grouped submissions already exist for this client with
     // matching formGroup metadata, return them rather than creating duplicates.
     const existing = await ctx.db
@@ -68,6 +69,13 @@ export const initGroupedSubmissions = mutation({
     );
     if (existingGroup?.groupId) {
       const groupSubs = existing.filter((s) => s.groupId === existingGroup.groupId);
+      if (preferredLanguage) {
+        for (const sub of groupSubs) {
+          if (sub.preferredLanguage !== preferredLanguage) {
+            await ctx.db.patch(sub._id, { preferredLanguage });
+          }
+        }
+      }
       return {
         alreadyExists: true as const,
         groupId: existingGroup.groupId,
@@ -92,6 +100,7 @@ export const initGroupedSubmissions = mutation({
         answers: {},
         metadata: { formGroup },
         groupId,
+        preferredLanguage,
       });
       submissions.push({
         submissionId: id,
@@ -110,8 +119,9 @@ export const initSubmission = mutation({
     firmId: v.id("firms"),
     title: v.string(),
     formType: v.optional(v.string()),
+    preferredLanguage: v.optional(v.string()),
   },
-  handler: async (ctx, { clientId, firmId, title, formType }) => {
+  handler: async (ctx, { clientId, firmId, title, formType, preferredLanguage }) => {
     const submitted = await ctx.db
       .query("submissions")
       .withIndex("by_client", (q) => q.eq("clientId", clientId))
@@ -136,10 +146,17 @@ export const initSubmission = mutation({
       .first();
 
     if (inProgress) {
+      const patch: Record<string, unknown> = {};
       // Backfill formDefinitionId on legacy in_progress submissions that were
       // created before this field was tracked here.
       if (!inProgress.formDefinitionId && formDefinitionId) {
-        await ctx.db.patch(inProgress._id, { formDefinitionId });
+        patch.formDefinitionId = formDefinitionId;
+      }
+      if (preferredLanguage && inProgress.preferredLanguage !== preferredLanguage) {
+        patch.preferredLanguage = preferredLanguage;
+      }
+      if (Object.keys(patch).length > 0) {
+        await ctx.db.patch(inProgress._id, patch);
       }
       return {
         alreadySubmitted: false as const,
@@ -148,7 +165,7 @@ export const initSubmission = mutation({
         skippedSections: inProgress.skippedSections,
         documentOnly: inProgress.documentOnly,
         metadata: inProgress.metadata,
-        preferredLanguage: inProgress.preferredLanguage,
+        preferredLanguage: preferredLanguage ?? inProgress.preferredLanguage,
       };
     }
 
@@ -161,6 +178,7 @@ export const initSubmission = mutation({
       status: "in_progress",
       answers: {},
       metadata: {},
+      preferredLanguage,
     });
 
     return {
@@ -170,7 +188,7 @@ export const initSubmission = mutation({
       skippedSections: undefined,
       documentOnly: undefined,
       metadata: {},
-      preferredLanguage: undefined,
+      preferredLanguage,
     };
   },
 });
