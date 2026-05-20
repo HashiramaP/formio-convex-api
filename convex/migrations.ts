@@ -530,6 +530,45 @@ export const backfillLegacyClientIds = internalMutation({
   },
 });
 
+// One-shot: backfill firms.emailSettings from the Supabase `firm_email_settings`
+// table that migrate-prod.ts originally skipped. Matches firms by workosUserId.
+export const backfillFirmEmailSettings = internalMutation({
+  args: {
+    rows: v.array(
+      v.object({
+        workosUserId: v.string(),
+        settings: v.object({
+          generalNotificationEmail: v.optional(v.string()),
+          physicalMailingAddress: v.optional(v.string()),
+          remindersEnabled: v.boolean(),
+          reminderCadence: v.object({
+            firstAfterDays: v.number(),
+            repeatEveryDays: v.number(),
+            maxReminders: v.number(),
+          }),
+        }),
+      })
+    ),
+  },
+  handler: async (ctx, { rows }) => {
+    let patched = 0;
+    const missing: string[] = [];
+    for (const { workosUserId, settings } of rows) {
+      const firm = await ctx.db
+        .query("firms")
+        .withIndex("by_workosUserId", (q) => q.eq("workosUserId", workosUserId))
+        .first();
+      if (!firm) {
+        missing.push(workosUserId);
+        continue;
+      }
+      await ctx.db.patch(firm._id, { emailSettings: settings });
+      patched++;
+    }
+    return { patched, total: rows.length, missing };
+  },
+});
+
 // One-shot migration: rename aiCreditsRemaining → monthlyClientsRemaining,
 // maxClientSlots → monthlyClientLimit, and drop clientRollback.
 // Run once with `schemaValidation: false` in schema.ts, then re-enable validation.
@@ -715,5 +754,190 @@ export const clearAll = internalMutation({
       }
     }
     return counts;
+  },
+});
+
+// ===== Prune helpers used by scripts/sync-dev-from-prod.ts =====
+// All `internalMutation` / `internalQuery` — unreachable from public clients
+// without the admin key. Safe to leave in prod.
+
+// Returns the fields needed for stratified sampling on the caller side.
+export const pruneListSubmissions = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const docs = await ctx.db.query("submissions").collect();
+    return docs.map((d) => ({
+      _id: d._id as string,
+      status: d.status,
+      firmId: d.firmId as string,
+      clientId: (d.clientId as string | undefined) ?? null,
+    }));
+  },
+});
+
+// Deletes every submissionDocument row tied to one of these submissionIds, plus
+// its underlying _storage blob. Caller should chunk to ~30 submission IDs per
+// invocation so writes stay well under the per-mutation budget.
+export const pruneDeleteSubmissionDocsFor = internalMutation({
+  args: { submissionIds: v.array(v.string()) },
+  handler: async (ctx, { submissionIds }) => {
+    let docsDeleted = 0;
+    let filesDeleted = 0;
+    for (const sid of submissionIds) {
+      const docs = await ctx.db
+        .query("submissionDocuments")
+        .withIndex("by_submission", (q) => q.eq("submissionId", sid as any))
+        .collect();
+      for (const doc of docs) {
+        if (doc.storageId) {
+          try {
+            await ctx.storage.delete(doc.storageId);
+            filesDeleted++;
+          } catch {
+            // storage entry already gone — keep going
+          }
+        }
+        await ctx.db.delete(doc._id);
+        docsDeleted++;
+      }
+    }
+    return { processed: submissionIds.length, docsDeleted, filesDeleted };
+  },
+});
+
+// Deletes every generatedLegalDocs row whose clientId is in the supplied list,
+// plus the underlying _storage blob (status='error' rows have no storage).
+export const pruneDeleteGenLegalDocsFor = internalMutation({
+  args: { clientIds: v.array(v.string()) },
+  handler: async (ctx, { clientIds }) => {
+    let docsDeleted = 0;
+    let filesDeleted = 0;
+    for (const cid of clientIds) {
+      const docs = await ctx.db
+        .query("generatedLegalDocs")
+        .withIndex("by_client_doc", (q) => q.eq("clientId", cid as any))
+        .collect();
+      for (const doc of docs) {
+        if (doc.storageId) {
+          try {
+            await ctx.storage.delete(doc.storageId);
+            filesDeleted++;
+          } catch {
+            // storage already gone
+          }
+        }
+        await ctx.db.delete(doc._id);
+        docsDeleted++;
+      }
+    }
+    return { processed: clientIds.length, docsDeleted, filesDeleted };
+  },
+});
+
+// Deletes submissions by raw _id. Chunk to ~200 per call.
+export const pruneDeleteSubmissionsByIds = internalMutation({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) => {
+    let deleted = 0;
+    for (const id of ids) {
+      try {
+        await ctx.db.delete(id as any);
+        deleted++;
+      } catch {
+        // already deleted
+      }
+    }
+    return { deleted, total: ids.length };
+  },
+});
+
+// Deletes clients by raw _id.
+export const pruneDeleteClientsByIds = internalMutation({
+  args: { ids: v.array(v.string()) },
+  handler: async (ctx, { ids }) => {
+    let deleted = 0;
+    for (const id of ids) {
+      try {
+        await ctx.db.delete(id as any);
+        deleted++;
+      } catch {
+        // already deleted
+      }
+    }
+    return { deleted, total: ids.length };
+  },
+});
+
+// Clears a single table in chunks. Also deletes the _storage blob if the row has
+// a storageId. Returns `hasMore: true` if it stopped at chunkSize.
+export const pruneClearTableChunked = internalMutation({
+  args: { table: v.string(), chunkSize: v.optional(v.number()) },
+  handler: async (ctx, { table, chunkSize = 1000 }) => {
+    const docs = await ctx.db.query(table as any).take(chunkSize);
+    let deleted = 0;
+    let filesDeleted = 0;
+    for (const doc of docs) {
+      const storageId = (doc as any).storageId;
+      if (storageId) {
+        try {
+          await ctx.storage.delete(storageId);
+          filesDeleted++;
+        } catch {
+          // already gone
+        }
+      }
+      await ctx.db.delete(doc._id);
+      deleted++;
+    }
+    return { deleted, filesDeleted, hasMore: docs.length === chunkSize };
+  },
+});
+
+// Deletes uploadedForms rows that lack a storageId (the 96 broken-as-imported
+// rows in prod). Idempotent: re-running it returns deleted=0 once clean.
+export const pruneDeleteUploadedFormsWithoutStorage = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const docs = await ctx.db.query("uploadedForms").collect();
+    let deleted = 0;
+    for (const doc of docs) {
+      if (doc.storageId) continue;
+      await ctx.db.delete(doc._id);
+      deleted++;
+    }
+    return { deleted, kept: docs.length - deleted };
+  },
+});
+
+// Returns a temporary signed URL for a storage object. Used by the dev sync
+// script to download prod file bytes for re-upload into dev storage.
+export const getStorageDownloadUrl = internalQuery({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, { storageId }) => {
+    return await ctx.storage.getUrl(storageId);
+  },
+});
+
+// Returns rows from one of the file-bearing tables that still carry a
+// non-null storageId (the rows whose files we need to re-upload into dev).
+export const listRowsNeedingStorageTransfer = internalQuery({
+  args: {
+    table: v.union(
+      v.literal("submissionDocuments"),
+      v.literal("generatedLegalDocs"),
+      v.literal("uploadedForms")
+    ),
+  },
+  handler: async (ctx, { table }) => {
+    const docs = await ctx.db.query(table).collect();
+    return docs
+      .filter((d: any) => !!d.storageId)
+      .map((d: any) => ({
+        _id: d._id as string,
+        storageId: d.storageId as string,
+        // Pass through a mime hint where available; submissionDocuments has
+        // fileType, the other two are always PDF in this codebase.
+        mimeType: d.fileType ?? "application/pdf",
+      }));
   },
 });

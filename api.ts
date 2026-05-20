@@ -333,6 +333,12 @@ export type PublicApiType = {
       { formDefinitionId: Id<"formDefinitions"> },
       any
     >;
+    getOwnFormQuestions: FunctionReference<
+      "query",
+      "public",
+      { formDefinitionId: Id<"formDefinitions"> },
+      any
+    >;
     getDistinctSections: FunctionReference<
       "query",
       "public",
@@ -423,6 +429,21 @@ export type PublicApiType = {
       "query",
       "public",
       { submissionId: Id<"submissions"> },
+      any
+    >;
+    initGroupedSubmissions: FunctionReference<
+      "mutation",
+      "public",
+      {
+        clientId: Id<"clients">;
+        firmId: Id<"firms">;
+        formGroup: string;
+        forms: Array<{
+          formDefinitionId: Id<"formDefinitions">;
+          formType?: string;
+        }>;
+        title: string;
+      },
       any
     >;
     initSubmission: FunctionReference<
