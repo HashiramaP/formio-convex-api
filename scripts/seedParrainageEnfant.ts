@@ -41,9 +41,11 @@ function convexRun(fn: string, args: any, prod = false): any {
   const tmpFile = `/tmp/convex-seed-pe-${Date.now()}.json`;
   writeFileSync(tmpFile, argsJson);
   try {
-    const prodFlag = prod ? " --prod" : "";
+    // Self-hosted prod: load CONVEX_URL/CONVEX_DEPLOY_KEY from .env.prod via dotenv-cli.
+    // `convex run --prod` is rejected on self-hosted deployments.
+    const prefix = prod ? "npx dotenv-cli -e .env.prod -- " : "";
     const result = execSync(
-      `npx convex run${prodFlag} ${fn} "$(cat ${tmpFile})"`,
+      `${prefix}npx convex run ${fn} "$(cat ${tmpFile})"`,
       { cwd: resolve(__dirname, ".."), maxBuffer: 50 * 1024 * 1024, encoding: "utf-8" }
     );
     unlinkSync(tmpFile);
