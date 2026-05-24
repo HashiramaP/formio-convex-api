@@ -1,0 +1,84 @@
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
+
+// Demande presets — a named bundle of IMMs (legalDocuments) that get
+// attached to a client together when a consultant picks a demande type.
+// Multiplier for setup: pick "parrainage-époux au Canada" once, the right
+// IMMs land on the client and the dynamic intake generator does the rest.
+//
+// Auth: open during the Slice 2 spike so seed scripts + CLI tests work
+// with just the admin key. Wrap with `requireCurrentFirm` once the
+// dashboard catalog editor lands. firmId optional for canonical presets
+// shared across all firms; per-firm overrides come later.
+
+export const setDemandeType = mutation({
+  args: {
+    slug: v.string(),
+    name: v.string(),
+    category: v.optional(v.string()),
+    description: v.optional(v.string()),
+    legalDocumentIds: v.array(v.id("legalDocuments")),
+    firmId: v.optional(v.id("firms")),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("demandeTypes")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+    if (existing) {
+      await ctx.db.patch(existing._id, args);
+      return existing._id;
+    }
+    return await ctx.db.insert("demandeTypes", args);
+  },
+});
+
+export const listDemandeTypes = query({
+  args: { category: v.optional(v.string()), firmId: v.optional(v.id("firms")) },
+  handler: async (ctx, { category, firmId }) => {
+    // Pull canonical (no firmId) plus the firm's own presets when firmId is
+    // provided. Frontend filters/sorts; we just supply the union.
+    const canonical = await ctx.db
+      .query("demandeTypes")
+      .withIndex("by_firm", (q) => q.eq("firmId", undefined))
+      .collect();
+    const firmOwned = firmId
+      ? await ctx.db
+          .query("demandeTypes")
+          .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+          .collect()
+      : [];
+    const all = [...canonical, ...firmOwned];
+    return category ? all.filter((d) => d.category === category) : all;
+  },
+});
+
+export const getDemandeType = query({
+  args: { id: v.id("demandeTypes") },
+  handler: async (ctx, { id }) => ctx.db.get(id),
+});
+
+export const getDemandeTypeBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) =>
+    await ctx.db
+      .query("demandeTypes")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique(),
+});
+
+// Attach a demande type to a client — resolves the preset's legalDocumentIds
+// and writes them onto `clients.legalDocuments`. Replaces existing IMMs (v1
+// behavior); future evolution can merge / extend / remove.
+export const attachDemandeToClient = mutation({
+  args: {
+    clientId: v.id("clients"),
+    demandeTypeId: v.id("demandeTypes"),
+  },
+  handler: async (ctx, { clientId, demandeTypeId }) => {
+    const dt = await ctx.db.get(demandeTypeId);
+    if (!dt) throw new Error(`demandeType ${demandeTypeId} not found`);
+    await ctx.db.patch(clientId, { legalDocuments: dt.legalDocumentIds });
+    return { clientId, legalDocumentIds: dt.legalDocumentIds, demandeName: dt.name };
+  },
+});

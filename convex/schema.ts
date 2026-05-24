@@ -162,6 +162,24 @@ export default defineSchema({
   })
     .index("by_client_doc", ["clientId", "legalDocumentId"]),
 
+  // Demande presets — a named bundle of IMMs that go together for a given
+  // demande type (e.g. "parrainage-époux au Canada" = [IMM1344, IMM5532,
+  // IMM5491, IMM0008, ...]). Picking a preset is the consultant-facing
+  // shortcut to attach all the right IMMs to a client in one click.
+  // firmId optional: undefined = canonical (shared across all firms);
+  // per-firm overrides are a future evolution.
+  demandeTypes: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    category: v.optional(v.string()),
+    description: v.optional(v.string()),
+    legalDocumentIds: v.array(v.id("legalDocuments")),
+    firmId: v.optional(v.id("firms")),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_firm", ["firmId"])
+    .index("by_category", ["category"]),
+
   aiUsageLogs: defineTable({
     firmId: v.id("firms"),
     modelName: v.string(),

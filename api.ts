@@ -608,6 +608,7 @@ export type PublicApiType = {
         category: string;
         firmId: Id<"firms">;
         isBaseForm?: boolean;
+        language?: string;
         name: string;
       },
       any
@@ -642,6 +643,7 @@ export type PublicApiType = {
           excludedBaseSections?: Array<string>;
           isBaseForm?: boolean;
           isSelfContained?: boolean;
+          language?: string;
           name?: string;
         };
       },

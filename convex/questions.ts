@@ -191,6 +191,56 @@ export const getDistinctSections = query({
   },
 });
 
+// Slice 2 spike — seed canonical (global, no firmId) questions into the
+// catalog. `upsertQuestionsBatch` deliberately refuses global writes so
+// firms can't pollute the shared catalog; this mutation is the back-door
+// for catalog admin operations during the IMM-indexed intake build-out.
+// Open during the spike so the seed script runs with just the admin key.
+// Drop or auth-wrap once the admin tooling lands.
+export const seedCanonicalQuestions = mutation({
+  args: {
+    questions: v.array(
+      v.object({
+        externalId: v.string(),
+        label: v.string(),
+        shortLabel: v.optional(v.string()),
+        type: v.string(),
+        options: v.optional(v.any()),
+        isRequired: v.optional(v.boolean()),
+        indication: v.optional(v.string()),
+        help: v.optional(v.string()),
+        placeholder: v.optional(v.string()),
+        example: v.optional(v.string()),
+        validationRules: v.optional(v.any()),
+      }),
+    ),
+  },
+  handler: async (ctx, { questions: newQuestions }) => {
+    const results: Array<{ externalId: string; action: "inserted" | "updated" }> = [];
+    for (const q of newQuestions) {
+      const existing = await ctx.db
+        .query("questions")
+        .withIndex("by_externalId", (idx) => idx.eq("externalId", q.externalId))
+        .unique();
+      if (existing) {
+        if (existing.firmId) {
+          // Refuse to clobber a firm-scoped question with a canonical one —
+          // surface the conflict so the caller picks a different externalId.
+          throw new Error(
+            `externalId "${q.externalId}" is firm-scoped; cannot overwrite as canonical`,
+          );
+        }
+        await ctx.db.patch(existing._id, q);
+        results.push({ externalId: q.externalId, action: "updated" });
+      } else {
+        await ctx.db.insert("questions", { ...q, firmId: undefined });
+        results.push({ externalId: q.externalId, action: "inserted" });
+      }
+    }
+    return results;
+  },
+});
+
 export const getQuestionsByExternalIds = query({
   args: { externalIds: v.array(v.string()) },
   handler: async (ctx, { externalIds }) => {

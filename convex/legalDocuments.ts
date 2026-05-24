@@ -233,3 +233,183 @@ export const upsertGeneratedLegalDoc = mutation({
     });
   },
 });
+
+// IMM-indexed intake — Slice 2 path. The legacy XFA-dump in `immQuestions`
+// is replaced with a structured shape that declares which intake questions
+// (by externalId from the canonical `questions` catalog) the IMM consumes,
+// plus which client-uploaded documents it requires. Firm-side and
+// system-derived fields are tracked for documentation but are filled
+// outside the intake flow (firm profile, computed at submission, etc.).
+//
+// Expected shape on `legalDocuments.immQuestions`:
+//   {
+//     intakeQuestions: [
+//       { externalId: "lastName", label?: string, required?: boolean,
+//         section?: string, page?: number, order?: number }
+//     ],
+//     requiredDocuments: [
+//       { key: "passport", label?: string, required?: boolean }
+//     ],
+//     firmFields?: Array<{ label, page, section, ... }>,    // doc only
+//     systemFields?: Array<{ label, kind: "signature"|"computed", ... }>  // doc only
+//   }
+type ImmIntakeMapping = {
+  intakeQuestions: Array<{
+    externalId: string;
+    label?: string;
+    required?: boolean;
+    section?: string;
+    page?: number;
+    order?: number;
+  }>;
+  requiredDocuments: Array<{
+    key: string;
+    label?: string;
+    required?: boolean;
+  }>;
+  firmFields?: unknown;
+  systemFields?: unknown;
+};
+
+export const setImmQuestions = mutation({
+  args: {
+    legalDocumentId: v.id("legalDocuments"),
+    immQuestions: v.any(),
+  },
+  handler: async (ctx, { legalDocumentId, immQuestions }) => {
+    // Open during the Slice 2 spike so the seed can run via `convex run`
+    // with just the admin key (no JWT). Wrap with `requireCurrentFirm`
+    // once the dashboard catalog editor lands and the seed moves there.
+    await ctx.db.patch(legalDocumentId, { immQuestions });
+  },
+});
+
+// Slice 2 spike helper — attach IMMs to a client without going through
+// `updateClient` (which requires a firmId arg + JWT auth). Used by the
+// CLI seed scripts to wire test clients up to specific IMMs. Drop or
+// wrap with auth once the dashboard's client editor exposes this.
+export const attachLegalDocsForSpike = mutation({
+  args: {
+    clientId: v.id("clients"),
+    legalDocuments: v.array(v.id("legalDocuments")),
+  },
+  handler: async (ctx, { clientId, legalDocuments }) => {
+    await ctx.db.patch(clientId, { legalDocuments });
+  },
+});
+
+// Dynamic intake generator — given a client, computes the union of intake
+// questions and required documents from every IMM in their
+// `clients.legalDocuments[]`. Each question is enriched from the canonical
+// `questions` catalog so the frontend has full metadata (type, options,
+// validationRules, etc.) without a second round-trip.
+//
+// Dedup rules: questions deduped by externalId, first IMM wins for source
+// metadata (section/page/order). Required flag is the OR across IMMs.
+// Documents deduped by key, required is OR.
+//
+// Open to the anonymous form-website (URL clientId is the bearer token).
+export const getIntakeForClient = query({
+  args: { clientId: v.id("clients") },
+  handler: async (ctx, { clientId }) => {
+    const client = await ctx.db.get(clientId);
+    if (!client) return { error: "client not found" as const };
+
+    const legalDocIds = client.legalDocuments ?? [];
+    if (legalDocIds.length === 0) {
+      return { questions: [], documents: [], imms: [] };
+    }
+
+    const legalDocs = await Promise.all(legalDocIds.map((id) => ctx.db.get(id)));
+
+    // Dedup buckets keyed by externalId / document key.
+    const questionsByExt = new Map<
+      string,
+      { externalId: string; required: boolean; section?: string; page?: number; order?: number; sourcedFrom: string[] }
+    >();
+    const documentsByKey = new Map<
+      string,
+      { key: string; label?: string; required: boolean; sourcedFrom: string[] }
+    >();
+
+    for (const ld of legalDocs) {
+      if (!ld) continue;
+      const mapping = ld.immQuestions as ImmIntakeMapping | undefined;
+      if (!mapping || !Array.isArray(mapping.intakeQuestions)) continue;
+
+      for (const q of mapping.intakeQuestions) {
+        const ext = q.externalId;
+        if (!ext) continue;
+        const existing = questionsByExt.get(ext);
+        if (existing) {
+          existing.required = existing.required || !!q.required;
+          existing.sourcedFrom.push(ld.name ?? ld._id);
+        } else {
+          questionsByExt.set(ext, {
+            externalId: ext,
+            required: !!q.required,
+            section: q.section,
+            page: q.page,
+            order: q.order,
+            sourcedFrom: [ld.name ?? ld._id],
+          });
+        }
+      }
+
+      const reqDocs = Array.isArray(mapping.requiredDocuments) ? mapping.requiredDocuments : [];
+      for (const d of reqDocs) {
+        const key = d.key;
+        if (!key) continue;
+        const existing = documentsByKey.get(key);
+        if (existing) {
+          existing.required = existing.required || !!d.required;
+          existing.sourcedFrom.push(ld.name ?? ld._id);
+        } else {
+          documentsByKey.set(key, {
+            key,
+            label: d.label,
+            required: !!d.required,
+            sourcedFrom: [ld.name ?? ld._id],
+          });
+        }
+      }
+    }
+
+    // Enrich question stubs with full catalog metadata. A missing entry
+    // means the IMM mapping references an externalId that doesn't exist in
+    // the questions table — surface it so the consultant can fix the
+    // catalog gap rather than silently dropping the question.
+    const enrichedQuestions = await Promise.all(
+      Array.from(questionsByExt.values()).map(async (stub) => {
+        const catalog = await ctx.db
+          .query("questions")
+          .withIndex("by_externalId", (q) => q.eq("externalId", stub.externalId))
+          .first();
+        return {
+          ...stub,
+          catalog: catalog ?? null,
+          missingFromCatalog: !catalog,
+        };
+      }),
+    );
+
+    // Preserve declared order where present, fallback to externalId for
+    // determinism.
+    enrichedQuestions.sort((a, b) => {
+      const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+      const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+      if (ao !== bo) return ao - bo;
+      return a.externalId.localeCompare(b.externalId);
+    });
+
+    return {
+      questions: enrichedQuestions,
+      documents: Array.from(documentsByKey.values()),
+      imms: legalDocs.filter(Boolean).map((d) => ({
+        _id: d!._id,
+        name: d!.name,
+        language: d!.language,
+      })),
+    };
+  },
+});
