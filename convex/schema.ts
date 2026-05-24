@@ -74,6 +74,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     slug: v.optional(v.string()),
     languageNames: v.optional(v.any()),
+    language: v.optional(v.string()),
     category: v.optional(v.string()),
     formGroup: v.optional(v.string()),
     groupLabel: v.optional(v.string()),

@@ -160,8 +160,9 @@ export const createBlankForm = mutation({
     name: v.string(),
     category: v.string(),
     isBaseForm: v.optional(v.boolean()),
+    language: v.optional(v.string()),
   },
-  handler: async (ctx, { firmId, name, category, isBaseForm }) => {
+  handler: async (ctx, { firmId, name, category, isBaseForm, language }) => {
     await requireFirmAccess(ctx, firmId);
     const slug =
       name
@@ -176,6 +177,7 @@ export const createBlankForm = mutation({
       category,
       slug,
       firmId,
+      language,
       isCustom: true,
       isSelfContained: true,
       isBaseForm: isBaseForm ?? false,
@@ -230,6 +232,7 @@ export const updateFormDefinition = mutation({
       baseFormId: v.optional(v.id("formDefinitions")),
       excludedBaseSections: v.optional(v.array(v.string())),
       isSelfContained: v.optional(v.boolean()),
+      language: v.optional(v.string()),
     }),
   },
   handler: async (ctx, { formId, updates }) => {
@@ -305,6 +308,7 @@ export const forkForm = mutation({
       description: source.description,
       slug,
       languageNames: source.languageNames,
+      language: source.language,
       category: source.category,
       formGroup: source.formGroup,
       groupLabel: source.groupLabel,

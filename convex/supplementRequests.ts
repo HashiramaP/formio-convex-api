@@ -19,6 +19,9 @@ export const getSupplementRequest = query({
     const client = submission?.clientId
       ? await ctx.db.get(submission.clientId)
       : null;
+    const formDefinition = submission?.formDefinitionId
+      ? await ctx.db.get(submission.formDefinitionId)
+      : null;
 
     return {
       ...supplement,
@@ -41,6 +44,13 @@ export const getSupplementRequest = query({
         ? {
             _id: client._id,
             primaryFormDefinitionId: client.primaryFormDefinitionId,
+          }
+        : null,
+      formDefinition: formDefinition
+        ? {
+            _id: formDefinition._id,
+            name: formDefinition.name,
+            language: formDefinition.language,
           }
         : null,
     };

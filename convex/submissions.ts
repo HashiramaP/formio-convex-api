@@ -31,7 +31,11 @@ export const getSubmission = query({
           }
         : null,
       formDefinition: formDefinition
-        ? { _id: formDefinition._id, name: formDefinition.name }
+        ? {
+            _id: formDefinition._id,
+            name: formDefinition.name,
+            language: formDefinition.language,
+          }
         : null,
     };
   },

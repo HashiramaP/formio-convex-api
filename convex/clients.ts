@@ -12,12 +12,14 @@ export const getClient = query({
     if (!client) return null;
 
     let formDefinitionName: string | undefined;
+    let formDefinitionLanguage: string | undefined;
     if (client.primaryFormDefinitionId) {
       const formDef = await ctx.db.get(client.primaryFormDefinitionId);
       formDefinitionName = formDef?.name ?? undefined;
+      formDefinitionLanguage = formDef?.language ?? undefined;
     }
 
-    return { ...client, formDefinitionName };
+    return { ...client, formDefinitionName, formDefinitionLanguage };
   },
 });
 
@@ -31,12 +33,14 @@ export const getClientByLegacyId = query({
     if (!client) return null;
 
     let formDefinitionName: string | undefined;
+    let formDefinitionLanguage: string | undefined;
     if (client.primaryFormDefinitionId) {
       const formDef = await ctx.db.get(client.primaryFormDefinitionId);
       formDefinitionName = formDef?.name ?? undefined;
+      formDefinitionLanguage = formDef?.language ?? undefined;
     }
 
-    return { ...client, formDefinitionName };
+    return { ...client, formDefinitionName, formDefinitionLanguage };
   },
 });
 
