@@ -368,3 +368,125 @@ export const deleteBaseForm = mutation({
     return { unlinked: linked.length };
   },
 });
+
+/**
+ * Spike admin mutation — manual support path for when the AI form-import
+ * feature fails (Word/PDF parsing breaks) and a consultant needs their
+ * template added by hand to their firm's custom forms.
+ *
+ * Takes a firmId + a structured template (sections × questions) and
+ * creates in one transaction:
+ *   1. A new `formDefinitions` row (firm-scoped, isCustom=true,
+ *      isSelfContained=true)
+ *   2. Firm-scoped `questions` rows for each question (upsert by
+ *      externalId; refuse cross-firm collisions)
+ *   3. `formQuestions` rows linking the new form to each question with
+ *      section + orderIndex
+ *
+ * NO AUTH — relies on the caller being on the local dev shell with the
+ * deploy key. Wrap with requireAdmin before any prod deploy. If a form
+ * with the same (firmId, name) already exists, refuses rather than
+ * overwriting — caller must rename or manually delete first.
+ */
+export const adminCreateCustomFormFromTemplate = mutation({
+  args: {
+    firmId: v.id("firms"),
+    name: v.string(),
+    language: v.optional(v.string()),
+    category: v.optional(v.string()),
+    questions: v.array(
+      v.object({
+        externalId: v.string(),
+        label: v.string(),
+        type: v.string(),
+        options: v.optional(v.any()),
+        isRequired: v.optional(v.boolean()),
+        indication: v.optional(v.string()),
+        placeholder: v.optional(v.string()),
+        multiEntryFields: v.optional(v.any()),
+        multiEntryAddLabel: v.optional(v.string()),
+        section: v.optional(v.string()),
+        dependsOn: v.optional(v.any()),
+      }),
+    ),
+  },
+  handler: async (ctx, { firmId, name, language, category, questions }) => {
+    const firmForms = await ctx.db
+      .query("formDefinitions")
+      .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+      .collect();
+    const collision = firmForms.find(
+      (f) => f.name === name && !f.deletedAt,
+    );
+    if (collision) {
+      throw new Error(
+        `formDefinition "${name}" already exists for firm ${firmId} (id=${collision._id}). Rename or delete first.`,
+      );
+    }
+
+    const slug =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") +
+      "-" +
+      Date.now();
+
+    const formId = await ctx.db.insert("formDefinitions", {
+      name,
+      slug,
+      firmId,
+      language,
+      category,
+      isCustom: true,
+      isSelfContained: true,
+      isBaseForm: false,
+      isConsentForm: false,
+    });
+
+    let orderIndex = 0;
+    for (const q of questions) {
+      const existing = await ctx.db
+        .query("questions")
+        .withIndex("by_externalId", (idx) => idx.eq("externalId", q.externalId))
+        .unique();
+      const questionPayload = {
+        externalId: q.externalId,
+        label: q.label,
+        type: q.type,
+        options: q.options,
+        isRequired: q.isRequired,
+        indication: q.indication,
+        placeholder: q.placeholder,
+        multiEntryFields: q.multiEntryFields,
+        multiEntryAddLabel: q.multiEntryAddLabel,
+        firmId,
+      };
+      if (existing) {
+        if (existing.firmId && existing.firmId !== firmId) {
+          throw new Error(
+            `externalId "${q.externalId}" belongs to a different firm (${existing.firmId}) — pick a unique key`,
+          );
+        }
+        if (!existing.firmId) {
+          throw new Error(
+            `externalId "${q.externalId}" is a canonical/global question — pick a firm-scoped name (e.g. prefix with "erar_alex_")`,
+          );
+        }
+        const { externalId: _ignored, ...patch } = questionPayload;
+        await ctx.db.patch(existing._id, patch);
+      } else {
+        await ctx.db.insert("questions", questionPayload);
+      }
+      await ctx.db.insert("formQuestions", {
+        formDefinitionId: formId,
+        questionKey: q.externalId,
+        orderIndex: orderIndex++,
+        section: q.section,
+        dependsOn: q.dependsOn,
+      });
+    }
+
+    return { formId, slug, questionsCreated: questions.length };
+  },
+});
