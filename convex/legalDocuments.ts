@@ -393,17 +393,48 @@ export const getIntakeForClient = query({
       }),
     );
 
-    // Preserve declared order where present, fallback to externalId for
-    // determinism.
+    // Category-based grouping: when a question has `catalog.category`, we
+    // use the canonical CATEGORY_ORDER to position it in the wizard and
+    // override `section` with the category's display title. Questions
+    // without a category fall back to the per-IMM `section` and are placed
+    // at the end (after categorized ones) sorted by their IMM order. This
+    // lets us migrate categorization incrementally without breaking the
+    // current flow.
+    const categoryIndex = new Map(
+      CATEGORY_ORDER.map((c, i) => [c.key, { idx: i, title: c.title }]),
+    );
+
     enrichedQuestions.sort((a, b) => {
+      const aCat = a.catalog?.category as string | undefined;
+      const bCat = b.catalog?.category as string | undefined;
+      const aMeta = aCat ? categoryIndex.get(aCat) : undefined;
+      const bMeta = bCat ? categoryIndex.get(bCat) : undefined;
+      // Uncategorized (or unknown category) → push after categorized ones.
+      const aPos = aMeta ? aMeta.idx : Number.MAX_SAFE_INTEGER;
+      const bPos = bMeta ? bMeta.idx : Number.MAX_SAFE_INTEGER;
+      if (aPos !== bPos) return aPos - bPos;
+      // Within a category, use catalog.categorySort, then IMM order, then ext.
+      const aSort = (a.catalog?.categorySort as number | undefined) ?? Number.MAX_SAFE_INTEGER;
+      const bSort = (b.catalog?.categorySort as number | undefined) ?? Number.MAX_SAFE_INTEGER;
+      if (aSort !== bSort) return aSort - bSort;
       const ao = a.order ?? Number.MAX_SAFE_INTEGER;
       const bo = b.order ?? Number.MAX_SAFE_INTEGER;
       if (ao !== bo) return ao - bo;
       return a.externalId.localeCompare(b.externalId);
     });
 
+    // Rewrite `section` for categorized questions so the wizard renders the
+    // category title (e.g. "Identité du répondant") instead of the IMM
+    // section ("Détails du répondant"). Uncategorized questions keep their
+    // IMM section.
+    const finalQuestions = enrichedQuestions.map((q) => {
+      const cat = q.catalog?.category as string | undefined;
+      const meta = cat ? categoryIndex.get(cat) : undefined;
+      return meta ? { ...q, section: meta.title } : q;
+    });
+
     return {
-      questions: enrichedQuestions,
+      questions: finalQuestions,
       documents: Array.from(documentsByKey.values()),
       imms: legalDocs.filter(Boolean).map((d) => ({
         _id: d!._id,
@@ -413,3 +444,30 @@ export const getIntakeForClient = query({
     };
   },
 });
+
+// Canonical category order for the IMM-indexed wizard. Decouples wizard
+// section ordering from per-IMM PDF structure: every catalog question gets
+// tagged with `category` (one of these keys) + an optional `categorySort`
+// for ordering within the bucket. New categories belong here; never let an
+// IMM mapping invent its own.
+const CATEGORY_ORDER: ReadonlyArray<{ key: string; title: string }> = [
+  { key: "sponsorshipMeta",        title: "Mise en place de la demande" },
+  { key: "sponsorIdentity",        title: "Identité du répondant" },
+  { key: "sponsorStatus",          title: "Statut au Canada du répondant" },
+  { key: "sponsorFamily",          title: "État civil du répondant" },
+  { key: "sponsorContact",         title: "Coordonnées du répondant" },
+  { key: "sponsorResidence",       title: "Résidence du répondant" },
+  { key: "sponsorHistory",         title: "Antécédents du répondant" },
+  { key: "sponsorAdmissibility",   title: "Admissibilité du répondant" },
+  { key: "cosignerIdentity",       title: "Identité du cosignataire" },
+  { key: "cosignerStatus",         title: "Statut au Canada du cosignataire" },
+  { key: "cosignerFamily",         title: "État civil du cosignataire" },
+  { key: "cosignerContact",        title: "Coordonnées du cosignataire" },
+  { key: "cosignerResidence",      title: "Résidence du cosignataire" },
+  { key: "cosignerAdmissibility",  title: "Admissibilité du cosignataire" },
+  { key: "sponsoredIdentity",      title: "Identité de la personne parrainée" },
+  { key: "sponsoredFamily",        title: "État civil de la personne parrainée" },
+  { key: "sponsoredHistory",       title: "Antécédents de la personne parrainée" },
+  { key: "relationshipNarrative",  title: "Récit de la relation" },
+  { key: "relationshipEvidence",   title: "Preuves de la relation" },
+];

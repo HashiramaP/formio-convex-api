@@ -214,6 +214,8 @@ export const seedCanonicalQuestions = mutation({
         validationRules: v.optional(v.any()),
         multiEntryFields: v.optional(v.any()),
         multiEntryAddLabel: v.optional(v.string()),
+        category: v.optional(v.string()),
+        categorySort: v.optional(v.number()),
       }),
     ),
   },

@@ -117,6 +117,13 @@ export default defineSchema({
     detailsBoxLabel: v.optional(v.string()),
     translations: v.optional(v.any()),
     firmId: v.optional(v.id("firms")),
+    // IMM-indexed intake categorization — decouples wizard section ordering
+    // from per-IMM PDF structure. `category` is the canonical bucket
+    // (e.g. "sponsorIdentity"); `categorySort` orders questions within a
+    // bucket. When set, getIntakeForClient groups + sorts by category and
+    // overrides the per-IMM `section` with the category's display title.
+    category: v.optional(v.string()),
+    categorySort: v.optional(v.number()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_firm", ["firmId"]),
