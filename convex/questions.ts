@@ -212,6 +212,8 @@ export const seedCanonicalQuestions = mutation({
         placeholder: v.optional(v.string()),
         example: v.optional(v.string()),
         validationRules: v.optional(v.any()),
+        multiEntryFields: v.optional(v.any()),
+        multiEntryAddLabel: v.optional(v.string()),
       }),
     ),
   },
