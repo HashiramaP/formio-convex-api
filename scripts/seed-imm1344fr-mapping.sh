@@ -144,7 +144,10 @@ read -r -d '' ARGS <<'JSON' || true
       { "externalId": "cosignerChargedSeriousOffence",              "label": "Cosignataire admissibilité Q15: Accusé 10+ ans?", "required": false, "section": "Examen d'admissibilité du cosignataire", "page": 4, "order": 174 },
       { "externalId": "cosignerAdmissibilityDetails",               "label": "Cosignataire admissibilité: Détails (textarea)", "required": false, "section": "Examen d'admissibilité du cosignataire", "page": 5, "order": 175 }
     ],
-    "requiredDocuments": []
+    "requiredDocuments": [
+      { "key": "passportDocument",   "label": "Passeport du répondant", "required": true },
+      { "key": "marriageCertificate", "label": "Acte de mariage",        "required": false }
+    ]
   }
 }
 JSON
