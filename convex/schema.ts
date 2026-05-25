@@ -187,6 +187,38 @@ export default defineSchema({
     .index("by_firm", ["firmId"])
     .index("by_category", ["category"]),
 
+  // OCR-capable document catalog — canonical source of truth for which docs
+  // we can extract data from + which answer keys each doc fills. Today the
+  // configs live in formioform's `passport-ocr.ts` / `document-ocr-configs.ts`;
+  // this table replaces that, with formioform fetching configs at render time
+  // (separate slice). `fills.externalId` accepts arbitrary answer keys —
+  // doesn't have to match a `questions` row, since many OCR-only fields
+  // (passportNumber, expiryDate, ...) are stored on submissions without
+  // ever being asked as wizard questions.
+  // firmId optional: undefined = canonical (shared); per-firm overrides
+  // are a future evolution.
+  documents: defineTable({
+    key: v.string(),
+    name: v.string(),
+    expectedDocumentType: v.string(),
+    prompt: v.string(),
+    fills: v.array(
+      v.object({
+        sourceKey: v.string(),
+        externalId: v.string(),
+        displayLabel: v.string(),
+        // Transform name resolved client-side via a registry (parseDate,
+        // icaoToIso2, mapGender, etc.). String, not a function, so configs
+        // can travel JSON-only.
+        transform: v.optional(v.string()),
+      }),
+    ),
+    skipNameVerification: v.optional(v.boolean()),
+    firmId: v.optional(v.id("firms")),
+  })
+    .index("by_key", ["key"])
+    .index("by_firm", ["firmId"]),
+
   aiUsageLogs: defineTable({
     firmId: v.id("firms"),
     modelName: v.string(),

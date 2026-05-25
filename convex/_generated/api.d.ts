@@ -14,6 +14,7 @@ import type * as auth from "../auth.js";
 import type * as clients from "../clients.js";
 import type * as crons from "../crons.js";
 import type * as demandeTypes from "../demandeTypes.js";
+import type * as documents from "../documents.js";
 import type * as errorLogs from "../errorLogs.js";
 import type * as feedback from "../feedback.js";
 import type * as firms from "../firms.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   clients: typeof clients;
   crons: typeof crons;
   demandeTypes: typeof demandeTypes;
+  documents: typeof documents;
   errorLogs: typeof errorLogs;
   feedback: typeof feedback;
   firms: typeof firms;

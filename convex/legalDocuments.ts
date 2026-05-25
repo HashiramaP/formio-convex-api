@@ -433,9 +433,34 @@ export const getIntakeForClient = query({
       return meta ? { ...q, section: meta.title } : q;
     });
 
+    // Enrich each required-document stub with the full catalog config
+    // (prompt, fills, expectedDocumentType, ...). `missingFromCatalog: true`
+    // means an IMM mapping declared a doc key that doesn't exist in the
+    // `documents` table — surface it so the consultant can fix the catalog
+    // gap. Firm scope is the client's firm (if set), so per-firm overrides
+    // take precedence over canonical configs.
+    const enrichedDocuments = await Promise.all(
+      Array.from(documentsByKey.values()).map(async (stub) => {
+        const candidates = await ctx.db
+          .query("documents")
+          .withIndex("by_key", (q) => q.eq("key", stub.key))
+          .collect();
+        const firmScoped = client.firmId
+          ? candidates.find((d) => d.firmId === client.firmId)
+          : undefined;
+        const canonical = candidates.find((d) => d.firmId === undefined);
+        const catalog = firmScoped ?? canonical ?? null;
+        return {
+          ...stub,
+          catalog,
+          missingFromCatalog: !catalog,
+        };
+      }),
+    );
+
     return {
       questions: finalQuestions,
-      documents: Array.from(documentsByKey.values()),
+      documents: enrichedDocuments,
       imms: legalDocs.filter(Boolean).map((d) => ({
         _id: d!._id,
         name: d!.name,
