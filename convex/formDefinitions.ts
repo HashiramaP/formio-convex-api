@@ -428,11 +428,14 @@ export const adminCreateCustomFormFromTemplate = mutation({
       "-" +
       Date.now();
 
+    // `language` arg accepted for API compat with newer schema (post-i18n
+    // WIP) — silently dropped on prod schema (0.0.26) which doesn't have
+    // the field yet. Hotfix path; main has the language field.
+    void language;
     const formId = await ctx.db.insert("formDefinitions", {
       name,
       slug,
       firmId,
-      language,
       category,
       isCustom: true,
       isSelfContained: true,
