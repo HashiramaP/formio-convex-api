@@ -29,8 +29,8 @@ read -r -d '' ARGS <<'JSON' || true
       "isRequired": false,
       "indication": "Vous ne devez répondre que si vous êtes non admissible. Sinon, laissez vide.",
       "options": [
-        "Retirer mon parrainage — tous les frais de traitement moins les frais de parrainage seront remboursés.",
-        "Poursuivre avec le traitement de la demande de résidence permanente — tous les droits de traitement seront retenus."
+        { "code": "retirer", "name": "Retirer mon parrainage — tous les frais de traitement moins les frais de parrainage seront remboursés." },
+        { "code": "poursuivre", "name": "Poursuivre avec le traitement de la demande de résidence permanente — tous les droits de traitement seront retenus." }
       ]
     },
     {
@@ -107,7 +107,11 @@ read -r -d '' ARGS <<'JSON' || true
       "label": "Cosignataire — genre",
       "type": "select",
       "isRequired": false,
-      "options": ["Homme", "Femme", "Autre"]
+      "options": [
+        { "code": "masculin", "name": "Masculin" },
+        { "code": "feminin", "name": "Féminin" },
+        { "code": "autre", "name": "Autre" }
+      ]
     },
     {
       "externalId": "cosignerDateOfBirth",
@@ -133,10 +137,10 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": false,
       "options": [
-        "Citoyen canadien né au Canada",
-        "Citoyen canadien naturalisé",
-        "Résident permanent",
-        "Indien inscrit au sens de la Loi sur les Indiens"
+        { "code": "citoyen_ne", "name": "Citoyen canadien né au Canada" },
+        { "code": "citoyen_naturalise", "name": "Citoyen canadien naturalisé" },
+        { "code": "resident_permanent", "name": "Résident permanent" },
+        { "code": "indien_inscrit", "name": "Indien inscrit au sens de la Loi sur les Indiens" }
       ]
     },
     {
@@ -177,7 +181,12 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": false,
       "indication": "Le cosignataire doit être l'époux ou conjoint de fait du répondant.",
-      "options": ["Époux/épouse", "Conjoint(e) de fait", "Partenaire conjugal(e)", "Autre"]
+      "options": [
+        { "code": "epoux", "name": "Époux/épouse" },
+        { "code": "conjoint_fait", "name": "Conjoint(e) de fait" },
+        { "code": "partenaire_conjugal", "name": "Partenaire conjugal(e)" },
+        { "code": "autre", "name": "Autre" }
+      ]
     },
     {
       "externalId": "cosignerRelationshipToSponsorOther",
@@ -191,13 +200,13 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": false,
       "options": [
-        "Célibataire",
-        "Marié(e)",
-        "Conjoint(e) de fait",
-        "Divorcé(e)",
-        "Séparé(e)",
-        "Veuf/veuve",
-        "Mariage annulé"
+        { "code": "celibataire", "name": "Célibataire" },
+        { "code": "marie", "name": "Marié(e)" },
+        { "code": "conjoint_fait", "name": "Conjoint(e) de fait" },
+        { "code": "divorce", "name": "Divorcé(e)" },
+        { "code": "separe", "name": "Séparé(e)" },
+        { "code": "veuf", "name": "Veuf/veuve" },
+        { "code": "annule", "name": "Mariage annulé" }
       ]
     },
     {
@@ -247,7 +256,11 @@ read -r -d '' ARGS <<'JSON' || true
       "label": "Cosignataire — type d'union avec l'ex-conjoint",
       "type": "select",
       "isRequired": false,
-      "options": ["Mariage", "Union de fait", "Partenariat conjugal"]
+      "options": [
+        { "code": "mariage", "name": "Mariage" },
+        { "code": "union_fait", "name": "Union de fait" },
+        { "code": "partenariat_conjugal", "name": "Partenariat conjugal" }
+      ]
     },
     {
       "externalId": "cosignerExSpouseUnionStartDate",
@@ -273,7 +286,11 @@ read -r -d '' ARGS <<'JSON' || true
       "label": "Cosignataire — type de téléphone",
       "type": "select",
       "isRequired": false,
-      "options": ["Résidence", "Travail", "Cellulaire"]
+      "options": [
+        { "code": "residence", "name": "Résidence" },
+        { "code": "travail", "name": "Travail" },
+        { "code": "cellulaire", "name": "Cellulaire" }
+      ]
     },
     {
       "externalId": "cosignerEmail",
@@ -293,8 +310,8 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": false,
       "options": [
-        "Dans une province ou un territoire du Canada autre que le Québec",
-        "Dans la province de Québec"
+        { "code": "hors_quebec", "name": "Dans une province ou un territoire du Canada autre que le Québec" },
+        { "code": "quebec", "name": "Dans la province de Québec" }
       ]
     },
     {

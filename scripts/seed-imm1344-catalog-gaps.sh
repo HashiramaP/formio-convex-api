@@ -18,7 +18,10 @@ read -r -d '' ARGS <<'JSON' || true
       "label": "Dans quelle langue préférez-vous correspondre avec IRCC ?",
       "type": "select",
       "isRequired": true,
-      "options": ["Français", "Anglais"]
+      "options": [
+        { "code": "fr", "name": "Français" },
+        { "code": "en", "name": "Anglais" }
+      ]
     },
     {
       "externalId": "hasCosigner",
@@ -53,14 +56,14 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": true,
       "options": [
-        "Époux/épouse",
-        "Conjoint(e) de fait",
-        "Partenaire conjugal(e)",
-        "Enfant à charge",
-        "Père/mère",
-        "Grand-père/grand-mère",
-        "Frère/sœur, neveu/nièce, petit-enfant orphelin",
-        "Autre"
+        { "code": "epoux", "name": "Époux/épouse" },
+        { "code": "conjoint_fait", "name": "Conjoint(e) de fait" },
+        { "code": "partenaire_conjugal", "name": "Partenaire conjugal(e)" },
+        { "code": "enfant_charge", "name": "Enfant à charge" },
+        { "code": "parent", "name": "Père/mère" },
+        { "code": "grand_parent", "name": "Grand-père/grand-mère" },
+        { "code": "frere_soeur_etc", "name": "Frère/sœur, neveu/nièce, petit-enfant orphelin" },
+        { "code": "autre", "name": "Autre" }
       ]
     },
     {
@@ -82,10 +85,10 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": true,
       "options": [
-        "Citoyen canadien né au Canada",
-        "Citoyen canadien naturalisé",
-        "Résident permanent",
-        "Indien inscrit au sens de la Loi sur les Indiens"
+        { "code": "citoyen_ne", "name": "Citoyen canadien né au Canada" },
+        { "code": "citoyen_naturalise", "name": "Citoyen canadien naturalisé" },
+        { "code": "resident_permanent", "name": "Résident permanent" },
+        { "code": "indien_inscrit", "name": "Indien inscrit au sens de la Loi sur les Indiens" }
       ]
     },
     {
@@ -126,7 +129,11 @@ read -r -d '' ARGS <<'JSON' || true
       "label": "Quel type d'union aviez-vous avec votre ex-conjoint(e) ?",
       "type": "select",
       "isRequired": false,
-      "options": ["Mariage", "Union de fait", "Partenariat conjugal"]
+      "options": [
+        { "code": "mariage", "name": "Mariage" },
+        { "code": "union_fait", "name": "Union de fait" },
+        { "code": "partenariat_conjugal", "name": "Partenariat conjugal" }
+      ]
     },
     {
       "externalId": "isCanadianAbroad",

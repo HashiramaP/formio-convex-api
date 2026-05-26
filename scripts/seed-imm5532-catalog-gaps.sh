@@ -88,10 +88,10 @@ read -r -d '' ARGS <<'JSON' || true
       "type": "select",
       "isRequired": true,
       "options": [
-        "École élémentaire / primaire",
-        "Études secondaires",
-        "Collège / Université",
-        "Études supérieures"
+        { "code": "primaire", "name": "École élémentaire / primaire" },
+        { "code": "secondaire", "name": "Études secondaires" },
+        { "code": "college_universite", "name": "Collège / Université" },
+        { "code": "etudes_superieures", "name": "Études supérieures" }
       ]
     },
     {
