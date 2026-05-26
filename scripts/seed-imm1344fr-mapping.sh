@@ -145,8 +145,9 @@ read -r -d '' ARGS <<'JSON' || true
       { "externalId": "cosignerAdmissibilityDetails",               "label": "Cosignataire admissibilité: Détails (textarea)", "required": false, "section": "Examen d'admissibilité du cosignataire", "page": 5, "order": 175 }
     ],
     "requiredDocuments": [
-      { "key": "passportDocument",   "label": "Passeport du répondant", "required": true },
-      { "key": "marriageCertificate", "label": "Acte de mariage",        "required": false }
+      { "key": "passportDocument",   "label": "Passeport du répondant",    "required": true },
+      { "key": "marriageCertificate", "label": "Acte de mariage",           "required": false },
+      { "key": "cosignerPassport",   "label": "Passeport du cosignataire", "required": false }
     ]
   }
 }

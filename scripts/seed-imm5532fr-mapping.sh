@@ -97,7 +97,9 @@ read -r -d '' ARGS <<'JSON' || true
       { "externalId": "pregnancyDueDate",                      "label": "Partie C Q10: Date prévue de l'accouchement",                  "required": false, "section": "Partie C — Renseignements concernant la relation",                       "page": 7, "order": 70 },
       { "externalId": "additionalRelationshipInfo",            "label": "Partie C Q11: Autres renseignements à l'appui",                "required": false, "section": "Partie C — Renseignements concernant la relation",                       "page": 7, "order": 71 }
     ],
-    "requiredDocuments": []
+    "requiredDocuments": [
+      { "key": "sponsoredPassport", "label": "Passeport de la personne parrainée", "required": true }
+    ]
   }
 }
 JSON
