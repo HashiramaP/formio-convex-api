@@ -119,8 +119,9 @@ export const insertClient = mutation({
     firmId: v.id("firms"),
     firstName: v.string(),
     lastName: v.string(),
+    notificationProfileId: v.optional(v.id("notificationProfiles")),
   },
-  handler: async (ctx, { firmId, firstName, lastName }) => {
+  handler: async (ctx, { firmId, firstName, lastName, notificationProfileId }) => {
     await requireFirmAccess(ctx, firmId);
     const id = await ctx.db.insert("clients", {
       firmId,
@@ -130,6 +131,7 @@ export const insertClient = mutation({
       phoneNumber: "",
       notes: {},
       status: "new",
+      ...(notificationProfileId ? { notificationProfileId } : {}),
     });
     const client = await ctx.db.get(id);
     return client;
@@ -149,13 +151,23 @@ export const updateClient = mutation({
       primaryFormDefinitionId: v.optional(v.id("formDefinitions")),
       status: v.optional(v.string()),
       legalDocuments: v.optional(v.array(v.id("legalDocuments"))),
+      // null = clear the association (back to the firm's general email).
+      notificationProfileId: v.optional(
+        v.union(v.id("notificationProfiles"), v.null()),
+      ),
     }),
   },
   handler: async (ctx, { firmId, clientId, updates }) => {
     await requireFirmAccess(ctx, firmId);
     const client = await ctx.db.get(clientId);
     if (!client || client.firmId !== firmId) return null;
-    await ctx.db.patch(clientId, updates);
+    // Convex clears an optional field when patched with `undefined`; translate
+    // an explicit `null` (clear request) into that.
+    const normalized =
+      updates.notificationProfileId === null
+        ? { ...updates, notificationProfileId: undefined }
+        : updates;
+    await ctx.db.patch(clientId, normalized);
     return await ctx.db.get(clientId);
   },
 });

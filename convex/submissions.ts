@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { requireFirmAccess, requireSubmissionAccess } from "./auth";
 
 // Most submission functions are called by form-website (anonymous) using
@@ -284,6 +285,14 @@ export const completeSubmission = mutation({
         submitted_at: new Date().toISOString(),
       },
     });
+
+    // Notify the firm out-of-band (case's notification profile, else the firm's
+    // general email). Scheduled so a Resend failure never blocks the submission.
+    await ctx.scheduler.runAfter(
+      0,
+      internal.notifications.sendSubmissionNotification,
+      { submissionId },
+    );
   },
 });
 

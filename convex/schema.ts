@@ -42,6 +42,9 @@ export default defineSchema({
     primaryFormDefinitionId: v.optional(v.id("formDefinitions")),
     status: v.optional(v.string()),
     legalDocuments: v.optional(v.array(v.id("legalDocuments"))),
+    // Notification profile that receives this case's emails (else the firm's
+    // general notification email). See notificationProfiles table.
+    notificationProfileId: v.optional(v.id("notificationProfiles")),
     emailConsentAt: v.optional(v.number()),
     emailUnsubscribedAt: v.optional(v.number()),
     legacyId: v.optional(v.string()),
@@ -186,6 +189,15 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_firm", ["firmId"])
     .index("by_category", ["category"]),
+
+  // Notification profiles — a firm-scoped person + email that can be attached
+  // to a client (case). When the case's form is submitted, this profile is
+  // emailed; otherwise the firm's general notification email is used.
+  notificationProfiles: defineTable({
+    firmId: v.id("firms"),
+    name: v.string(),
+    email: v.string(),
+  }).index("by_firm", ["firmId"]),
 
   // OCR-capable document catalog — canonical source of truth for which docs
   // we can extract data from + which answer keys each doc fills. Today the
