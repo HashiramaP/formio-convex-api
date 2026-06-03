@@ -127,6 +127,11 @@ export default defineSchema({
     // overrides the per-IMM `section` with the category's display title.
     category: v.optional(v.string()),
     categorySort: v.optional(v.number()),
+    // Conditional visibility carried on the canonical question itself (e.g.
+    // { questionId: "hasCosigner", value: "oui" }). The IMM-indexed intake
+    // generates the wizard from the questions catalog (not formQuestions), so
+    // the dependency must live here too, not only on formQuestions.
+    dependsOn: v.optional(v.any()),
   })
     .index("by_externalId", ["externalId"])
     .index("by_firm", ["firmId"]),
