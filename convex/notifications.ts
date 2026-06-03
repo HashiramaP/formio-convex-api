@@ -162,9 +162,12 @@ export const sendSubmissionNotification = internalAction({
         html,
       }),
     });
-    const body = await res.json().catch(() => ({}) as Record<string, unknown>);
+    const body = (await res.json().catch(() => ({}))) as {
+      id?: string;
+      [k: string]: unknown;
+    };
 
-    if (!res.ok || !body?.id) {
+    if (!res.ok || !body.id) {
       await ctx.runMutation(api.errorLogs.logError, {
         source: "notifications",
         context: "sendSubmissionNotification",
@@ -176,6 +179,6 @@ export const sendSubmissionNotification = internalAction({
       });
       return { status: "failed" as const };
     }
-    return { status: "sent" as const, id: body.id as string };
+    return { status: "sent" as const, id: body.id };
   },
 });

@@ -161,13 +161,16 @@ export const updateClient = mutation({
     await requireFirmAccess(ctx, firmId);
     const client = await ctx.db.get(clientId);
     if (!client || client.firmId !== firmId) return null;
-    // Convex clears an optional field when patched with `undefined`; translate
-    // an explicit `null` (clear request) into that.
-    const normalized =
-      updates.notificationProfileId === null
-        ? { ...updates, notificationProfileId: undefined }
-        : updates;
-    await ctx.db.patch(clientId, normalized);
+    // Convex clears an optional field when patched with `undefined`. Pull
+    // notificationProfileId out so an explicit `null` (clear) maps to undefined,
+    // while an absent key leaves it unchanged.
+    const { notificationProfileId, ...rest } = updates;
+    await ctx.db.patch(clientId, {
+      ...rest,
+      ...(notificationProfileId !== undefined
+        ? { notificationProfileId: notificationProfileId ?? undefined }
+        : {}),
+    });
     return await ctx.db.get(clientId);
   },
 });
