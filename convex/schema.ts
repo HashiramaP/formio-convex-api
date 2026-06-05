@@ -14,6 +14,9 @@ export default defineSchema({
     subscriptionEndDate: v.optional(v.number()),
     monthlyClientsRemaining: v.optional(v.number()),
     monthlyClientLimit: v.optional(v.number()),
+    // Max notification profiles a firm may create (admin-set, manual).
+    // Unset/undefined = unlimited.
+    notificationProfileLimit: v.optional(v.number()),
     emailSettings: v.optional(
       v.object({
         generalNotificationEmail: v.optional(v.string()),

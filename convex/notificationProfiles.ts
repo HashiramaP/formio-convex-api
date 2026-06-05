@@ -18,6 +18,17 @@ export const listNotificationProfiles = query({
   },
 });
 
+// Max profiles this firm may create (admin-set). null = unlimited. The
+// dashboard gets the current count from listNotificationProfiles.
+export const getNotificationProfileLimit = query({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
+    const firm = await ctx.db.get(firmId);
+    return firm?.notificationProfileLimit ?? null;
+  },
+});
+
 export const createNotificationProfile = mutation({
   args: {
     firmId: v.id("firms"),
@@ -26,6 +37,19 @@ export const createNotificationProfile = mutation({
   },
   handler: async (ctx, { firmId, name, email }) => {
     await requireFirmAccess(ctx, firmId);
+    // Enforce the per-firm cap (when one is set).
+    const firm = await ctx.db.get(firmId);
+    if (typeof firm?.notificationProfileLimit === "number") {
+      const count = (
+        await ctx.db
+          .query("notificationProfiles")
+          .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+          .collect()
+      ).length;
+      if (count >= firm.notificationProfileLimit) {
+        throw new Error("notification_profile_limit_reached");
+      }
+    }
     const id = await ctx.db.insert("notificationProfiles", {
       firmId,
       name,
