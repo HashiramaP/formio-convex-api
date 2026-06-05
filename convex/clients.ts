@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { requireFirmAccess } from "./auth";
 
 // `getClient`, `getClientByLegacyId`, and `recordEmailConsent` are called by
@@ -134,6 +135,14 @@ export const insertClient = mutation({
       ...(notificationProfileId ? { notificationProfileId } : {}),
     });
     const client = await ctx.db.get(id);
+    // Notify the assignee out-of-band when a profile is set at creation.
+    if (notificationProfileId) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.notifications.sendAssignmentNotification,
+        { clientId: id, profileId: notificationProfileId },
+      );
+    }
     return client;
   },
 });
@@ -171,6 +180,18 @@ export const updateClient = mutation({
         ? { notificationProfileId: notificationProfileId ?? undefined }
         : {}),
     });
+    // Notify the new assignee only when the profile actually changes to a real
+    // one (skip re-saves with the same profile, and clears to general email).
+    if (
+      notificationProfileId &&
+      notificationProfileId !== client.notificationProfileId
+    ) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.notifications.sendAssignmentNotification,
+        { clientId, profileId: notificationProfileId },
+      );
+    }
     return await ctx.db.get(clientId);
   },
 });

@@ -182,3 +182,122 @@ export const sendSubmissionNotification = internalAction({
     return { status: "sent" as const, id: body.id };
   },
 });
+
+// ── Assignment notification ─────────────────────────────────────────────────
+// When a client is assigned to a notification profile (at creation or via the
+// detail page), email that assignee "you've been assigned this case". Scheduled
+// out-of-band from clients.insertClient / clients.updateClient.
+
+function buildAssignmentHtml({
+  clientName,
+  profileName,
+  deepLink,
+}: {
+  clientName: string;
+  profileName: string;
+  deepLink: string;
+}): string {
+  const greeting = profileName ? `Bonjour ${profileName},` : "Bonjour,";
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 0; color: #1a1a1a; background-color: #f9fafb;">
+  <div style="background-color: #0088FF; padding: 20px 32px; text-align: center;">
+    <img src="https://formio.ca/FormioTextWhite.png" alt="Formio" style="height: 36px; width: auto;" />
+  </div>
+
+  <div style="background-color: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #1a1a1a;">Nouveau dossier assign&#233;</h2>
+
+    <p style="font-size: 16px; line-height: 1.5;">${greeting}</p>
+    <p style="font-size: 16px; line-height: 1.5;">
+      Le dossier de <strong>${clientName}</strong> vous a &#233;t&#233; assign&#233;.
+      Vous recevrez d&#233;sormais les notifications li&#233;es &#224; ce dossier.
+    </p>
+
+    <a href="${deepLink}" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500; margin-top: 8px;">
+      Voir le dossier
+    </a>
+  </div>
+
+  <div style="padding: 16px 32px; text-align: center; font-size: 11px; color: #9ca3af;">
+    <p style="margin: 0;">Envoy&#233; automatiquement par <a href="https://formio.ca" style="color: #2563eb; text-decoration: none;">Formio</a></p>
+  </div>
+</body>
+</html>`;
+}
+
+export const getAssignmentNotificationData = internalQuery({
+  args: {
+    clientId: v.id("clients"),
+    profileId: v.id("notificationProfiles"),
+  },
+  handler: async (ctx, { clientId, profileId }) => {
+    const client = await ctx.db.get(clientId);
+    if (!client) return null;
+    const profile = await ctx.db.get(profileId);
+    if (!profile?.email) return null;
+    const firm = await ctx.db.get(client.firmId);
+    return {
+      recipientEmail: profile.email,
+      profileName: profile.name ?? "",
+      firmId: client.firmId,
+      clientName:
+        `${client.firstName ?? ""} ${client.lastName ?? ""}`.trim() || "Client",
+      generalEmail: firm?.emailSettings?.generalNotificationEmail ?? null,
+    };
+  },
+});
+
+export const sendAssignmentNotification = internalAction({
+  args: {
+    clientId: v.id("clients"),
+    profileId: v.id("notificationProfiles"),
+  },
+  handler: async (ctx, { clientId, profileId }) => {
+    const data = await ctx.runQuery(
+      internal.notifications.getAssignmentNotificationData,
+      { clientId, profileId },
+    );
+    if (!data) return { status: "skipped_no_recipient" as const };
+
+    const deepLink = `https://app.formio.ca/dashboard/clients/${clientId}`;
+    const html = buildAssignmentHtml({
+      clientName: data.clientName,
+      profileName: data.profileName,
+      deepLink,
+    });
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Formio <info@formio.ca>",
+        to: [data.recipientEmail],
+        ...(data.generalEmail ? { reply_to: data.generalEmail } : {}),
+        subject: `Nouveau dossier assigné : ${data.clientName}`,
+        html,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      id?: string;
+      [k: string]: unknown;
+    };
+
+    if (!res.ok || !body.id) {
+      await ctx.runMutation(api.errorLogs.logError, {
+        source: "notifications",
+        context: "sendAssignmentNotification",
+        message: "resend_failed",
+        details: body,
+        clientId,
+        firmId: data.firmId,
+      });
+      return { status: "failed" as const };
+    }
+    return { status: "sent" as const, id: body.id };
+  },
+});
