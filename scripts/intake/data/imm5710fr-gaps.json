@@ -1,0 +1,508 @@
+{
+ "questions": [
+  {
+   "externalId": "workPermitRequestType",
+   "label": "Que souhaitez-vous faire avec cette demande ? (cochez tout ce qui s’applique)",
+   "type": "checkbox",
+   "isRequired": true,
+   "options": [
+    {
+     "code": "retablir_statut",
+     "name": "Rétablir mon statut de travailleur"
+    },
+    {
+     "code": "wp_meme_employeur",
+     "name": "Permis de travail — même employeur"
+    },
+    {
+     "code": "wp_nouvel_employeur",
+     "name": "Permis de travail — première fois ou nouvel employeur"
+    },
+    {
+     "code": "nouveau_trp",
+     "name": "Nouveau permis de séjour temporaire"
+    }
+   ]
+  },
+  {
+   "externalId": "otherNameLastName",
+   "label": "Quel est l’autre nom de famille que vous avez utilisé ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "otherNameFirstName",
+   "label": "Quel est l’autre prénom que vous avez utilisé ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "currentResidenceStatusOther",
+   "label": "Précisez votre statut d’immigrant dans votre pays de résidence actuel (Autre).",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "currentResidenceStatusStart",
+   "label": "Quelle est la date de début de votre statut dans votre pays de résidence actuel ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "currentResidenceStatusEnd",
+   "label": "Quelle est la date de fin de votre statut dans votre pays de résidence actuel ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "hasPreviousResidenceCountries",
+   "label": "Au cours des cinq dernières années, avez-vous vécu dans un pays autre que celui de votre citoyenneté ou de votre résidence actuelle pendant plus de six mois ?",
+   "type": "yes-no",
+   "isRequired": true
+  },
+  {
+   "externalId": "previousResidenceCountries",
+   "label": "Indiquez les pays ou territoires où vous avez vécu au cours des cinq dernières années.",
+   "type": "multi-entry",
+   "isRequired": false,
+   "multiEntryFields": [
+    {
+     "key": "country",
+     "label": "Pays ou territoire",
+     "type": "text"
+    },
+    {
+     "key": "status",
+     "label": "Statut",
+     "type": "text"
+    },
+    {
+     "key": "statusOther",
+     "label": "Statut (Autre) — précisions",
+     "type": "text"
+    },
+    {
+     "key": "startDate",
+     "label": "Date de début (AAAA-MM-JJ)",
+     "type": "date"
+    },
+    {
+     "key": "endDate",
+     "label": "Date de fin (AAAA-MM-JJ)",
+     "type": "date"
+    }
+   ],
+   "multiEntryAddLabel": "Ajouter un pays"
+  },
+  {
+   "externalId": "spouseLastName",
+   "label": "Quel est le nom de famille de votre époux ou conjoint de fait actuel ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "spouseFirstName",
+   "label": "Quel est le prénom de votre époux ou conjoint de fait actuel ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "isSpouseCanadianOrPR",
+   "label": "Votre époux ou conjoint de fait est-il citoyen canadien ou résident permanent du Canada ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "exSpouseLastName",
+   "label": "Quel est le nom de famille de votre ancien époux ou conjoint de fait ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "exSpouseFirstName",
+   "label": "Quel est le prénom de votre ancien époux ou conjoint de fait ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "mostComfortableLanguage",
+   "label": "Dans quelle langue êtes-vous le plus à l’aise ?",
+   "type": "select",
+   "isRequired": false,
+   "options": [
+    {
+     "code": "anglais",
+     "name": "Anglais"
+    },
+    {
+     "code": "francais",
+     "name": "Français"
+    }
+   ]
+  },
+  {
+   "externalId": "usesDiplomaticPassport",
+   "label": "Pour ce voyage, utiliserez-vous un passeport diplomatique ou délivré par un ministère des Affaires étrangères ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "usesIsraeliPassport",
+   "label": "Pour ce voyage, utiliserez-vous un passeport national israélien ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "hasUsPrCard",
+   "label": "Avez-vous le statut de résident permanent des États-Unis ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "usPrCardNumber",
+   "label": "Quel est le numéro de votre carte de résident permanent des États-Unis ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "usPrCardExpiryDate",
+   "label": "Quelle est la date d’expiration de votre carte de résident permanent des États-Unis ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "alternatePhone",
+   "label": "Quel est votre autre numéro de téléphone ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "faxNumber",
+   "label": "Quel est votre numéro de télécopieur ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "firstEntryReasonOther",
+   "label": "Précisez le motif de votre première visite au Canada (Autre).",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "documentNumber",
+   "label": "Quel est le numéro de document figurant sur votre fiche de visiteur, permis d’études ou de travail ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "workPermitType",
+   "label": "Pour quel genre de permis de travail faites-vous une demande ?",
+   "type": "select",
+   "isRequired": true,
+   "options": [
+    {
+     "code": "autre",
+     "name": "Autre"
+    },
+    {
+     "code": "categorie_du_demarrage_d_entreprise",
+     "name": "Catégorie du démarrage d’entreprise"
+    },
+    {
+     "code": "dispense_d_etude_d_impact_sur_le_marche_",
+     "name": "Dispense d'étude d'impact sur le marché du travail"
+    },
+    {
+     "code": "permis_de_travail_en_vertu_du_programme_",
+     "name": "Permis de travail en vertu du programme de stage coop"
+    },
+    {
+     "code": "permis_de_travail_ouvert",
+     "name": "Permis de travail ouvert"
+    },
+    {
+     "code": "permis_de_travail_ouvert_pour_travailleu",
+     "name": "Permis de travail ouvert pour travailleurs vulnérables"
+    },
+    {
+     "code": "permis_de_travail_post_diplome",
+     "name": "Permis de travail post-diplôme"
+    },
+    {
+     "code": "programme_concernant_les_aides_familiaux",
+     "name": "Programme concernant les aides familiaux résidants"
+    },
+    {
+     "code": "volet_etude_d_impact_sur_le_marche_du_tr",
+     "name": "Volet étude d'impact sur le marché du travail"
+    }
+   ]
+  },
+  {
+   "externalId": "workPermitTypeOther",
+   "label": "Précisez le genre de permis de travail (Autre).",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "employerName",
+   "label": "Quel est le nom de votre employeur ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "employerAddress",
+   "label": "Quelle est l’adresse complète de votre employeur ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "workProvince",
+   "label": "Dans quelle province comptez-vous travailler au Canada ?",
+   "type": "select",
+   "isRequired": false,
+   "options": [
+    {
+     "code": "ab",
+     "name": "AB"
+    },
+    {
+     "code": "bc",
+     "name": "BC"
+    },
+    {
+     "code": "mb",
+     "name": "MB"
+    },
+    {
+     "code": "nb",
+     "name": "NB"
+    },
+    {
+     "code": "nl",
+     "name": "NL"
+    },
+    {
+     "code": "ns",
+     "name": "NS"
+    },
+    {
+     "code": "nt",
+     "name": "NT"
+    },
+    {
+     "code": "nu",
+     "name": "NU"
+    },
+    {
+     "code": "on",
+     "name": "ON"
+    },
+    {
+     "code": "pe",
+     "name": "PE"
+    },
+    {
+     "code": "qc",
+     "name": "QC"
+    },
+    {
+     "code": "sk",
+     "name": "SK"
+    },
+    {
+     "code": "yt",
+     "name": "YT"
+    }
+   ]
+  },
+  {
+   "externalId": "workCity",
+   "label": "Dans quelle ville ou village comptez-vous travailler au Canada ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "workAddress",
+   "label": "Quelle est l’adresse du lieu prévu de votre emploi au Canada ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "jobTitle",
+   "label": "Quel est le titre de l’emploi que vous comptez occuper ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "jobDuties",
+   "label": "Décrivez brièvement les fonctions de cet emploi.",
+   "type": "textarea",
+   "isRequired": false
+  },
+  {
+   "externalId": "employmentStartDate",
+   "label": "Quelle est la date de début prévue de l’emploi ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "employmentEndDate",
+   "label": "Quelle est la date de fin prévue de l’emploi ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "lmiaNumber",
+   "label": "Quel est le numéro de l’étude d’impact sur le marché du travail (EIMT) ou le numéro d’offre d’emploi ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "caqNumber",
+   "label": "Quel est le numéro de votre certificat d’acceptation du Québec (CAQ) ?",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "caqExpiryDate",
+   "label": "Quelle est la date d’expiration de votre CAQ ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "hasProvincialNominee",
+   "label": "Vous a-t-on délivré un certificat en vertu du programme des candidats des provinces ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "hasPostSecondaryEducation",
+   "label": "Avez-vous fait des études postsecondaires (université, collège, etc.) ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "postSecondaryEducation",
+   "label": "Indiquez vos études postsecondaires les plus récentes.",
+   "type": "multi-entry",
+   "isRequired": false,
+   "multiEntryFields": [
+    {
+     "key": "fieldOfStudy",
+     "label": "Domaine d’études",
+     "type": "text"
+    },
+    {
+     "key": "school",
+     "label": "Nom de l’établissement",
+     "type": "text"
+    },
+    {
+     "key": "city",
+     "label": "Ville ou village",
+     "type": "text"
+    },
+    {
+     "key": "country",
+     "label": "Pays ou territoire",
+     "type": "text"
+    },
+    {
+     "key": "province",
+     "label": "Province ou État",
+     "type": "text"
+    },
+    {
+     "key": "startDate",
+     "label": "Date de début (AAAA-MM)",
+     "type": "date"
+    },
+    {
+     "key": "endDate",
+     "label": "Date de fin (AAAA-MM)",
+     "type": "date"
+    }
+   ],
+   "multiEntryAddLabel": "Ajouter des études"
+  },
+  {
+   "externalId": "familyMemberDisorder",
+   "label": "Au cours des deux dernières années, un membre de votre famille a-t-il souffert d’un trouble nécessitant le recours aux services sociaux ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "hasPhysicalMentalDisorder",
+   "label": "Souffrez-vous d’un trouble physique ou mental nécessitant le recours aux services sociaux ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "backgroundMedicalDetails",
+   "label": "Si vous avez répondu Oui, fournissez des précisions ainsi que le nom du membre de la famille concerné.",
+   "type": "textarea",
+   "isRequired": false
+  },
+  {
+   "externalId": "overstayedStatus",
+   "label": "Êtes-vous resté au Canada après l’expiration de votre statut, ou y avez-vous étudié ou travaillé sans autorisation ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "refusedVisa",
+   "label": "Vous a-t-on déjà refusé un visa ou un permis, interdit l’entrée ou demandé de quitter le Canada ou un autre pays ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "appliedBefore",
+   "label": "Avez-vous déjà fait une demande pour entrer ou demeurer au Canada ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "immigrationHistoryDetails",
+   "label": "Si vous avez répondu Oui à l’une de ces questions, fournissez des précisions.",
+   "type": "textarea",
+   "isRequired": false
+  },
+  {
+   "externalId": "criminalOffence",
+   "label": "Avez-vous déjà commis une infraction criminelle, ou été arrêté, accusé ou déclaré coupable d’un crime dans un pays ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "criminalDetails",
+   "label": "Si vous avez répondu Oui, fournissez des précisions.",
+   "type": "textarea",
+   "isRequired": false
+  },
+  {
+   "externalId": "militaryService",
+   "label": "Avez-vous déjà servi dans une armée, une milice, une unité de défense civile ou un service de sécurité ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "politicalAffiliation",
+   "label": "Êtes-vous, ou avez-vous déjà été, membre ou affilié d’un parti politique ou d’un autre groupe ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "witnessedIllTreatment",
+   "label": "Avez-vous été témoin de mauvais traitements infligés à des prisonniers ou des civils, ou de la destruction de biens ?",
+   "type": "yes-no",
+   "isRequired": false
+  },
+  {
+   "externalId": "consentFutureContact",
+   "label": "Acceptez-vous que CIC, ou un organisme mandaté par CIC, communique avec vous à l’avenir ?",
+   "type": "yes-no",
+   "isRequired": false
+  }
+ ]
+}
