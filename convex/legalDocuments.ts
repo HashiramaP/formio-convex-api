@@ -332,6 +332,11 @@ export const getIntakeForClient = query({
       { key: string; label?: string; required: boolean; sourcedFrom: string[] }
     >();
 
+    // Intake-reduction counter: how many fields the bundle has before any
+    // reduction. See INTAKE-REDUCTION-PLAN.md — `stats` (below) reports the
+    // funnel from raw fields → what the client actually answers.
+    let totalIntakeFields = 0;
+
     for (const ld of legalDocs) {
       if (!ld) continue;
       const mapping = ld.immQuestions as ImmIntakeMapping | undefined;
@@ -340,6 +345,7 @@ export const getIntakeForClient = query({
       for (const q of mapping.intakeQuestions) {
         const ext = q.externalId;
         if (!ext) continue;
+        totalIntakeFields++;
         const existing = questionsByExt.get(ext);
         if (existing) {
           existing.required = existing.required || !!q.required;
@@ -458,6 +464,34 @@ export const getIntakeForClient = query({
       }),
     );
 
+    // Intake-reduction funnel (see INTAKE-REDUCTION-PLAN.md). Computed from
+    // data already in hand — no extra queries. A question is removable when
+    // it can be auto-filled by one of the bundle's required documents (OCR)
+    // or hidden because it's conditional (`dependsOn`). `minClientAnswers`
+    // is the simplest-applicant floor (every conditional collapses, every
+    // doc uploaded); `maxClientAnswers` is the worst case (nothing reduced).
+    const ocrFillIds = new Set<string>();
+    for (const d of enrichedDocuments) {
+      const fills = (d.catalog?.fills ?? []) as Array<{ externalId?: string }>;
+      for (const f of fills) if (f.externalId) ocrFillIds.add(f.externalId);
+    }
+    const ocrFillable = new Set(
+      finalQuestions.filter((q) => ocrFillIds.has(q.externalId)).map((q) => q.externalId),
+    );
+    const conditional = new Set(
+      finalQuestions.filter((q) => q.catalog?.dependsOn).map((q) => q.externalId),
+    );
+    const removable = new Set([...ocrFillable, ...conditional]);
+    const stats = {
+      totalIntakeFields,
+      uniqueAfterDedup: finalQuestions.length,
+      dedupSaved: totalIntakeFields - finalQuestions.length,
+      ocrFillable: ocrFillable.size,
+      conditional: conditional.size,
+      minClientAnswers: finalQuestions.length - removable.size,
+      maxClientAnswers: finalQuestions.length,
+    };
+
     return {
       questions: finalQuestions,
       documents: enrichedDocuments,
@@ -466,6 +500,7 @@ export const getIntakeForClient = query({
         name: d!.name,
         language: d!.language,
       })),
+      stats,
     };
   },
 });

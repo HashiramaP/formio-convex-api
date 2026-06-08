@@ -245,6 +245,38 @@ export const seedCanonicalQuestions = mutation({
   },
 });
 
+// Set `dependsOn` (conditional visibility) on canonical catalog questions by
+// externalId. Admin-key seed helper (no JWT) — mirrors seedCanonicalQuestions'
+// canonical-only safety: refuses firm-scoped rows. Pass dependsOn:null to clear.
+// dependsOn is GLOBAL (applies on every form using the externalId); callers must
+// validate that every form containing a child also contains its parent question.
+// See INTAKE-REDUCTION-PLAN.md (Lever C).
+export const setQuestionDependsOnBatch = mutation({
+  args: {
+    items: v.array(v.object({ externalId: v.string(), dependsOn: v.any() })),
+  },
+  handler: async (ctx, { items }) => {
+    const results: Array<{
+      externalId: string;
+      action: "updated" | "missing" | "firm-scoped";
+    }> = [];
+    for (const { externalId, dependsOn } of items) {
+      const rows = await ctx.db
+        .query("questions")
+        .withIndex("by_externalId", (idx) => idx.eq("externalId", externalId))
+        .collect();
+      const canonical = rows.find((r) => !r.firmId);
+      if (!canonical) {
+        results.push({ externalId, action: rows.length ? "firm-scoped" : "missing" });
+        continue;
+      }
+      await ctx.db.patch(canonical._id, { dependsOn: dependsOn ?? undefined });
+      results.push({ externalId, action: "updated" });
+    }
+    return results;
+  },
+});
+
 export const getQuestionsByExternalIds = query({
   args: { externalIds: v.array(v.string()) },
   handler: async (ctx, { externalIds }) => {

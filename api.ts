@@ -393,6 +393,12 @@ export type PublicApiType = {
       },
       any
     >;
+    setQuestionDependsOnBatch: FunctionReference<
+      "mutation",
+      "public",
+      { items: Array<{ dependsOn: any; externalId: string }> },
+      any
+    >;
     getQuestionsByExternalIds: FunctionReference<
       "query",
       "public",
@@ -830,6 +836,7 @@ export type PublicApiType = {
           membershipStatus?: string;
           monthlyClientLimit?: number | null;
           monthlyClientsRemaining?: number | null;
+          notificationProfileLimit?: number | null;
           subscriptionEndDate?: number | null;
           subscriptionStartDate?: number | null;
         };
@@ -970,6 +977,37 @@ export type PublicApiType = {
       { clientId: Id<"clients">; demandeTypeId: Id<"demandeTypes"> },
       any
     >;
+    createFirmDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      {
+        description?: string;
+        firmId: Id<"firms">;
+        legalDocumentIds: Array<Id<"legalDocuments">>;
+        name: string;
+      },
+      any
+    >;
+    updateFirmDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        firmId: Id<"firms">;
+        updates: {
+          description?: string;
+          legalDocumentIds?: Array<Id<"legalDocuments">>;
+          name?: string;
+        };
+      },
+      any
+    >;
+    deleteFirmDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      { demandeTypeId: Id<"demandeTypes">; firmId: Id<"firms"> },
+      any
+    >;
   };
   documents: {
     setDocumentConfig: FunctionReference<
@@ -1027,6 +1065,12 @@ export type PublicApiType = {
   };
   notificationProfiles: {
     listNotificationProfiles: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getNotificationProfileLimit: FunctionReference<
       "query",
       "public",
       { firmId: Id<"firms"> },
