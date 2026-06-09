@@ -1,0 +1,701 @@
+{
+ "legalDocumentId": "k57b0mwm3ranwnfw649vvzm4cs86m0tw",
+ "immQuestions": {
+  "intakeQuestions": [
+   {
+    "externalId": "iucNumber",
+    "label": "Application details Q1: UCI number",
+    "required": false,
+    "section": "APPLICATION DETAILS",
+    "page": 1,
+    "order": 1
+   },
+   {
+    "externalId": "correspondenceLanguage",
+    "label": "Application details Q2: Service language",
+    "required": true,
+    "section": "APPLICATION DETAILS",
+    "page": 1,
+    "order": 2
+   },
+   {
+    "externalId": "visaType",
+    "label": "Application details Q3: Visa requested",
+    "required": true,
+    "section": "APPLICATION DETAILS",
+    "page": 1,
+    "order": 3
+   },
+   {
+    "externalId": "lastName",
+    "label": "Personal details Q1: Family name",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 4
+   },
+   {
+    "externalId": "firstName",
+    "label": "Personal details Q1: Given name(s)",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 5
+   },
+   {
+    "externalId": "otherNames",
+    "label": "Personal details Q2A: Ever used another name?",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 6
+   },
+   {
+    "externalId": "otherNameLastName",
+    "label": "Personal details Q2B: Other name — family name",
+    "required": false,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 7
+   },
+   {
+    "externalId": "otherNameFirstName",
+    "label": "Personal details Q2B: Other name — given name",
+    "required": false,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 8
+   },
+   {
+    "externalId": "gender",
+    "label": "Personal details Q3: Sex",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 9
+   },
+   {
+    "externalId": "dateOfBirth",
+    "label": "Personal details Q4: Date of birth",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 10
+   },
+   {
+    "externalId": "birthCity",
+    "label": "Personal details Q5A: Place of birth — city",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 11
+   },
+   {
+    "externalId": "birthCountry",
+    "label": "Personal details Q5B: Place of birth — country",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 12
+   },
+   {
+    "externalId": "nationality",
+    "label": "Personal details Q6: Citizenship",
+    "required": true,
+    "section": "PERSONAL DETAILS",
+    "page": 1,
+    "order": 13
+   },
+   {
+    "externalId": "currentResidenceCountry",
+    "label": "Residence Q7A: Current country of residence",
+    "required": true,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 14
+   },
+   {
+    "externalId": "residenceStatus",
+    "label": "Residence Q7B: Status in current country of residence",
+    "required": true,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 15
+   },
+   {
+    "externalId": "currentResidenceStatusOther",
+    "label": "Residence Q7C: Status (Other) — details",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 16
+   },
+   {
+    "externalId": "currentResidenceStatusStart",
+    "label": "Residence Q7D: Current status — start date",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 17
+   },
+   {
+    "externalId": "currentResidenceStatusEnd",
+    "label": "Residence Q7E: Current status — end date",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 18
+   },
+   {
+    "externalId": "hasPreviousResidenceCountries",
+    "label": "Residence Q8A: Lived elsewhere >6 months (last 5 yrs)?",
+    "required": true,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 19
+   },
+   {
+    "externalId": "previousResidenceCountries",
+    "label": "Residence Q8B: Previous countries of residence",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 20
+   },
+   {
+    "externalId": "applicationCountrySameAsResidence",
+    "label": "Residence Q9A: Application country = residence country?",
+    "required": true,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 21
+   },
+   {
+    "externalId": "applicationCountry",
+    "label": "Residence Q9B: Country where applying",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 22
+   },
+   {
+    "externalId": "applicationCountryStatus",
+    "label": "Residence Q9B: Status in application country",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 23
+   },
+   {
+    "externalId": "applicationCountryStatusOther",
+    "label": "Residence Q9B: Status (Other) — details",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 24
+   },
+   {
+    "externalId": "applicationCountryStatusStart",
+    "label": "Residence Q9B: Status — start date",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 25
+   },
+   {
+    "externalId": "applicationCountryStatusEnd",
+    "label": "Residence Q9B: Status — end date",
+    "required": false,
+    "section": "RESIDENCE",
+    "page": 1,
+    "order": 26
+   },
+   {
+    "externalId": "maritalStatus",
+    "label": "Marital status Q10A: Current marital status",
+    "required": true,
+    "section": "MARITAL STATUS",
+    "page": 1,
+    "order": 27
+   },
+   {
+    "externalId": "marriageDate",
+    "label": "Marital status Q10B: Date of marriage / common-law",
+    "required": false,
+    "section": "MARITAL STATUS",
+    "page": 1,
+    "order": 28
+   },
+   {
+    "externalId": "spouseLastName",
+    "label": "Marital status Q10C: Spouse — family name",
+    "required": false,
+    "section": "MARITAL STATUS",
+    "page": 1,
+    "order": 29
+   },
+   {
+    "externalId": "spouseFirstName",
+    "label": "Marital status Q10C: Spouse — given name",
+    "required": false,
+    "section": "MARITAL STATUS",
+    "page": 1,
+    "order": 30
+   },
+   {
+    "externalId": "hasPreviousMarriage",
+    "label": "Previous marriage Q11A: Ever married / common-law?",
+    "required": true,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 31
+   },
+   {
+    "externalId": "exSpouseLastName",
+    "label": "Previous marriage Q11B: Former spouse — family name",
+    "required": false,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 32
+   },
+   {
+    "externalId": "exSpouseFirstName",
+    "label": "Previous marriage Q11B: Former spouse — given name",
+    "required": false,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 33
+   },
+   {
+    "externalId": "exSpouseUnionType",
+    "label": "Previous marriage Q11D: Type of relationship",
+    "required": false,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 34
+   },
+   {
+    "externalId": "exSpouseUnionStartDate",
+    "label": "Previous marriage Q11D: Start date",
+    "required": false,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 35
+   },
+   {
+    "externalId": "exSpouseUnionEndDate",
+    "label": "Previous marriage Q11D: End date",
+    "required": false,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 36
+   },
+   {
+    "externalId": "exSpouseDob",
+    "label": "Previous marriage Q11E: Former spouse — date of birth",
+    "required": false,
+    "section": "PREVIOUS MARRIAGE",
+    "page": 2,
+    "order": 37
+   },
+   {
+    "externalId": "passportNumber",
+    "label": "Passport Q1: Passport number",
+    "required": true,
+    "section": "PASSPORT",
+    "page": 2,
+    "order": 38
+   },
+   {
+    "externalId": "passportCountry",
+    "label": "Passport Q2: Country of issue",
+    "required": true,
+    "section": "PASSPORT",
+    "page": 2,
+    "order": 39
+   },
+   {
+    "externalId": "passportIssueDate",
+    "label": "Passport Q3: Issue date",
+    "required": false,
+    "section": "PASSPORT",
+    "page": 2,
+    "order": 40
+   },
+   {
+    "externalId": "passportExpiryDate",
+    "label": "Passport Q4: Expiry date",
+    "required": true,
+    "section": "PASSPORT",
+    "page": 2,
+    "order": 41
+   },
+   {
+    "externalId": "usesDiplomaticPassport",
+    "label": "Passport Q5: Diplomatic passport?",
+    "required": false,
+    "section": "PASSPORT",
+    "page": 2,
+    "order": 42
+   },
+   {
+    "externalId": "usesIsraeliPassport",
+    "label": "Passport Q6: Israeli national passport?",
+    "required": false,
+    "section": "PASSPORT",
+    "page": 2,
+    "order": 43
+   },
+   {
+    "externalId": "motherLanguage",
+    "label": "Languages Q1A: Native language",
+    "required": true,
+    "section": "LANGUAGES",
+    "page": 2,
+    "order": 44
+   },
+   {
+    "externalId": "communicationLanguages",
+    "label": "Languages Q1B: Communicates in EN / FR / both",
+    "required": true,
+    "section": "LANGUAGES",
+    "page": 2,
+    "order": 45
+   },
+   {
+    "externalId": "mostComfortableLanguage",
+    "label": "Languages Q1C: Most comfortable language",
+    "required": false,
+    "section": "LANGUAGES",
+    "page": 2,
+    "order": 46
+   },
+   {
+    "externalId": "hasLanguageTest",
+    "label": "Languages Q3: Language test taken?",
+    "required": false,
+    "section": "LANGUAGES",
+    "page": 2,
+    "order": 47
+   },
+   {
+    "externalId": "hasNationalId",
+    "label": "National ID Q1: Have a national identity document?",
+    "required": false,
+    "section": "NATIONAL IDENTITY DOCUMENT",
+    "page": 2,
+    "order": 48
+   },
+   {
+    "externalId": "nationalIdNumber",
+    "label": "National ID Q2: Number",
+    "required": false,
+    "section": "NATIONAL IDENTITY DOCUMENT",
+    "page": 2,
+    "order": 49
+   },
+   {
+    "externalId": "nationalIdCountry",
+    "label": "National ID Q3: Country of issue",
+    "required": false,
+    "section": "NATIONAL IDENTITY DOCUMENT",
+    "page": 2,
+    "order": 50
+   },
+   {
+    "externalId": "nationalIdIssueDate",
+    "label": "National ID Q4: Issue date",
+    "required": false,
+    "section": "NATIONAL IDENTITY DOCUMENT",
+    "page": 2,
+    "order": 51
+   },
+   {
+    "externalId": "nationalIdExpiryDate",
+    "label": "National ID Q5: Expiry date",
+    "required": false,
+    "section": "NATIONAL IDENTITY DOCUMENT",
+    "page": 2,
+    "order": 52
+   },
+   {
+    "externalId": "hasUsPrCard",
+    "label": "US PR card Q1: US permanent resident status?",
+    "required": false,
+    "section": "US PR CARD",
+    "page": 2,
+    "order": 53
+   },
+   {
+    "externalId": "usPrCardNumber",
+    "label": "US PR card Q2: Card number",
+    "required": false,
+    "section": "US PR CARD",
+    "page": 2,
+    "order": 54
+   },
+   {
+    "externalId": "usPrCardExpiryDate",
+    "label": "US PR card Q3: Expiry date",
+    "required": false,
+    "section": "US PR CARD",
+    "page": 2,
+    "order": 55
+   },
+   {
+    "externalId": "postalAddress",
+    "label": "Contact Q1: Current mailing address",
+    "required": true,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 56
+   },
+   {
+    "externalId": "samePostalAddress",
+    "label": "Contact Q2: Home = mailing address?",
+    "required": false,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 57
+   },
+   {
+    "externalId": "residenceAddress",
+    "label": "Contact Q2: Home address",
+    "required": false,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 58
+   },
+   {
+    "externalId": "phone",
+    "label": "Contact Q3: Phone number",
+    "required": false,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 59
+   },
+   {
+    "externalId": "alternatePhone",
+    "label": "Contact Q4: Alternate phone number",
+    "required": false,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 60
+   },
+   {
+    "externalId": "faxNumber",
+    "label": "Contact Q5: Fax number",
+    "required": false,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 61
+   },
+   {
+    "externalId": "email",
+    "label": "Contact Q6: Email address",
+    "required": true,
+    "section": "CONTACT INFORMATION",
+    "page": 2,
+    "order": 62
+   },
+   {
+    "externalId": "visitPurpose",
+    "label": "Visit Q1A: Purpose of visit",
+    "required": true,
+    "section": "VISIT DETAILS",
+    "page": 3,
+    "order": 63
+   },
+   {
+    "externalId": "visitPurposeOther",
+    "label": "Visit Q1B: Purpose (Other) — details",
+    "required": false,
+    "section": "VISIT DETAILS",
+    "page": 3,
+    "order": 64
+   },
+   {
+    "externalId": "plannedArrivalDate",
+    "label": "Visit Q2: Planned arrival date",
+    "required": false,
+    "section": "VISIT DETAILS",
+    "page": 3,
+    "order": 65
+   },
+   {
+    "externalId": "plannedDepartureDate",
+    "label": "Visit Q2: Planned departure date",
+    "required": false,
+    "section": "VISIT DETAILS",
+    "page": 3,
+    "order": 66
+   },
+   {
+    "externalId": "fundsAvailable",
+    "label": "Visit Q3: Funds available (CAD)",
+    "required": false,
+    "section": "VISIT DETAILS",
+    "page": 3,
+    "order": 67
+   },
+   {
+    "externalId": "hostsVisited",
+    "label": "Visit Q4: People / institutions visited",
+    "required": false,
+    "section": "VISIT DETAILS",
+    "page": 3,
+    "order": 68
+   },
+   {
+    "externalId": "hasPostSecondaryEducation",
+    "label": "Education Q1: Post-secondary education?",
+    "required": false,
+    "section": "EDUCATION/OCCUPATION DETAIL",
+    "page": 3,
+    "order": 69
+   },
+   {
+    "externalId": "postSecondaryEducation",
+    "label": "Education Q1: Most recent post-secondary education",
+    "required": false,
+    "section": "EDUCATION/OCCUPATION DETAIL",
+    "page": 3,
+    "order": 70
+   },
+   {
+    "externalId": "employmentHistory",
+    "label": "Occupation: Employment, last 10 years",
+    "required": false,
+    "section": "EDUCATION/OCCUPATION DETAIL",
+    "page": 3,
+    "order": 71
+   },
+   {
+    "externalId": "familyMemberDisorder",
+    "label": "Background Q1A: Family member with a disorder?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 72
+   },
+   {
+    "externalId": "hasPhysicalMentalDisorder",
+    "label": "Background Q1B: Physical/mental disorder?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 73
+   },
+   {
+    "externalId": "backgroundMedicalDetails",
+    "label": "Background Q1C: Medical details",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 74
+   },
+   {
+    "externalId": "overstayedStatus",
+    "label": "Background Q2A: Overstayed / worked / studied without authorization?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 75
+   },
+   {
+    "externalId": "refusedVisa",
+    "label": "Background Q2B: Ever refused a visa/permit/removal?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 76
+   },
+   {
+    "externalId": "immigrationHistoryDetails",
+    "label": "Background Q2D: Details",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 77
+   },
+   {
+    "externalId": "criminalOffence",
+    "label": "Background Q3A: Criminal offence / arrest?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 78
+   },
+   {
+    "externalId": "criminalDetails",
+    "label": "Background Q3B: Details",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 79
+   },
+   {
+    "externalId": "militaryService",
+    "label": "Background Q4A: Military / militia service?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 80
+   },
+   {
+    "externalId": "militaryDetails",
+    "label": "Background Q4B: Details (dates, countries)",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 81
+   },
+   {
+    "externalId": "politicalAffiliation",
+    "label": "Background Q5: Member/affiliate of a political party?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 82
+   },
+   {
+    "externalId": "witnessedIllTreatment",
+    "label": "Background Q6: Witnessed ill-treatment?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 4,
+    "order": 83
+   },
+   {
+    "externalId": "consentFutureContact",
+    "label": "Consent: May CIC contact you in future?",
+    "required": false,
+    "section": "BACKGROUND INFORMATION",
+    "page": 5,
+    "order": 84
+   }
+  ],
+  "requiredDocuments": [
+   {
+    "key": "passportDocument",
+    "label": "Applicant passport",
+    "required": true
+   },
+   {
+    "key": "nationalIdDocument",
+    "label": "National identity document",
+    "required": false
+   },
+   {
+    "key": "marriageCertificate",
+    "label": "Marriage certificate (if married or common-law)",
+    "required": false
+   },
+   {
+    "key": "diploma1Document",
+    "label": "Diploma — most recent post-secondary studies",
+    "required": false
+   }
+  ]
+ }
+}

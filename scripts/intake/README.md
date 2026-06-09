@@ -33,6 +33,7 @@ EN variants reuse the FR externalIds verbatim — translate only label/section.
 
 - `seed-imm5710fr.sh` — applies IMM 5710 fr (work permit): 96 Qs, 53 gaps, 26 dependsOn.
 - `seed-imm5257fr.sh` — applies IMM 5257 fr (TRV): 84 Qs, **85% reused**, 13 gaps, 6 dependsOn.
+- `seed-imm5257en.sh` — IMM 5257 en: same externalIds, English labels — 0 gaps, 0 dependsOn.
 - `seed-fix-nationalid-document.sh` — fixes the nationalIdDocument OCR fills (orphan → real fields).
 - `seed-fix-iucnumber-gate.sh` — clears a leaking global dependsOn that hid UCI on 4 forms.
 - `data/*.json` — the reviewed payloads each seed applies (diff-able).
