@@ -662,6 +662,40 @@ export const setGroupPrimaries = internalMutation({
 });
 
 /**
+ * One-off, idempotent fix: the Supabase→Convex migration copied `form_group`
+ * onto the standalone "Parrainage familial (Couple)" form, but in the source
+ * that form's `form_group` was null. Being a non-primary member of the
+ * `parrainage-couple` group made getFormQuestions/getDistinctSections return
+ * only its own sections and skip merging the base form ("Formulaire de base"),
+ * so Identification / Coordonnées / Résidence & Langues / etc. never rendered
+ * for its submissions (the answer data is intact — only the rendering broke).
+ *
+ * Clearing `formGroup` restores the standalone behaviour: the null-`baseFormId`
+ * fallback then finds the global base form and merges its sections back in.
+ * Submission rows are NOT touched. Idempotent — re-running is a no-op.
+ *
+ * Run: npx convex run migrations:clearFormGroup '{"formDefinitionId":"<id>"}' --env-file .env.prod
+ */
+export const clearFormGroup = internalMutation({
+  args: { formDefinitionId: v.id("formDefinitions") },
+  handler: async (ctx, { formDefinitionId }) => {
+    const before = await ctx.db.get(formDefinitionId);
+    if (!before) return { ok: false as const, reason: "not found" };
+    await ctx.db.patch(formDefinitionId, {
+      formGroup: undefined,
+      groupLabel: undefined,
+    });
+    const after = await ctx.db.get(formDefinitionId);
+    return {
+      ok: true as const,
+      name: before.name,
+      before: { formGroup: before.formGroup, groupLabel: before.groupLabel },
+      after: { formGroup: after?.formGroup, groupLabel: after?.groupLabel },
+    };
+  },
+});
+
+/**
  * One-off, idempotent fix: the parrainage-enfant seed script wrote
  * documentConfig.acceptedFormats as file extensions (["pdf","jpg",...])
  * but the formioform wizard validates uploads via MIME types
