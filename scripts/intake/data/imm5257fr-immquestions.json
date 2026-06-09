@@ -592,7 +592,17 @@
     "required": false,
     "section": "BACKGROUND INFORMATION",
     "page": 4,
-    "order": 74
+    "order": 74,
+    "dependsOn": [
+     {
+      "questionId": "familyMemberDisorder",
+      "value": "oui"
+     },
+     {
+      "questionId": "hasPhysicalMentalDisorder",
+      "value": "oui"
+     }
+    ]
    },
    {
     "externalId": "overstayedStatus",
@@ -616,7 +626,17 @@
     "required": false,
     "section": "BACKGROUND INFORMATION",
     "page": 4,
-    "order": 77
+    "order": 77,
+    "dependsOn": [
+     {
+      "questionId": "overstayedStatus",
+      "value": "oui"
+     },
+     {
+      "questionId": "refusedVisa",
+      "value": "oui"
+     }
+    ]
    },
    {
     "externalId": "criminalOffence",
