@@ -71,8 +71,8 @@ function extractFields(pageNode, page, acc) {
 
 const data = await loadBytes(src);
 const doc = await pdfjs.getDocument({ data, enableXfa: true }).promise;
-const xfa = await doc.allXfaHtml;
-const pages = (xfa.children || []).filter((c) => String((c.attributes || {}).class || '').includes('xfaPage'));
+const xfa = await doc.allXfaHtml; // null for non-XFA (AcroForm/static) PDFs
+const pages = ((xfa && xfa.children) || []).filter((c) => String((c.attributes || {}).class || '').includes('xfaPage'));
 const fields = [];
 pages.forEach((p, i) => extractFields(p, i + 1, fields));
 const pageText = [];
