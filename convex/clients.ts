@@ -180,3 +180,23 @@ export const recordEmailConsent = mutation({
     await ctx.db.patch(clientId, { emailConsentAt: Date.now() });
   },
 });
+
+export const searchClients = query({
+  args: { firmId: v.id("firms"), searchName: v.string() },
+  handler: async (ctx, { firmId, searchName }) => {
+    await requireFirmAccess(ctx, firmId);
+    const clients = await ctx.db
+      .query("clients")
+      .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+      .collect();
+
+    const lowerSearch = searchName.toLowerCase();
+    return clients.filter((client) => {
+      const firstName = client.firstName?.toLowerCase() || "";
+      const lastName = client.lastName?.toLowerCase() || "";
+      return (
+        firstName.includes(lowerSearch) || lastName.includes(lowerSearch)
+      );
+    });
+  },
+});
