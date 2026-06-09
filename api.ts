@@ -5,6 +5,127 @@ export const api: PublicApiType = anyApi as unknown as PublicApiType;
 export const internal: InternalApiType = anyApi as unknown as InternalApiType;
 
 export type PublicApiType = {
+  admin: {
+    listAllFirms: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getFirm: FunctionReference<"query", "public", { firmId: Id<"firms"> }, any>;
+    updateFirm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        updates: {
+          apiKey?: string;
+          displayName?: string;
+          membershipStatus?: string;
+          monthlyClientLimit?: number | null;
+          monthlyClientsRemaining?: number | null;
+          subscriptionEndDate?: number | null;
+          subscriptionStartDate?: number | null;
+        };
+      },
+      any
+    >;
+    createPendingFirm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        displayName?: string;
+        membershipStatus: string;
+        monthlyClientLimit?: number;
+        monthlyClientsRemaining?: number;
+        pendingEmail: string;
+        subscriptionEndDate?: number;
+      },
+      any
+    >;
+    attachInvitationToFirm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        invitationSentAt: number;
+        workosInvitationId: string;
+      },
+      any
+    >;
+    attachWorkosUserToFirm: FunctionReference<
+      "mutation",
+      "public",
+      { pendingEmail: string; workosUserId: string },
+      any
+    >;
+    cancelPendingFirm: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    deleteFirm: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listAllClients: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listAllSubmissions: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listAllErrorLogs: FunctionReference<
+      "query",
+      "public",
+      { limit?: number },
+      any
+    >;
+    getAllFirmsSubmissionStats: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getGlobalSubmissionStats: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getAiUsageByFirm: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getFirmClientsDetail: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    isCurrentUserAdmin: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listAllFormFeedback: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+  };
   aiUsageLogs: {
     logOcrTransaction: FunctionReference<
       "mutation",
@@ -68,12 +189,7 @@ export type PublicApiType = {
     insertClient: FunctionReference<
       "mutation",
       "public",
-      {
-        firmId: Id<"firms">;
-        firstName: string;
-        lastName: string;
-        notificationProfileId?: Id<"notificationProfiles">;
-      },
+      { firmId: Id<"firms">; firstName: string; lastName: string },
       any
     >;
     updateClient: FunctionReference<
@@ -88,7 +204,6 @@ export type PublicApiType = {
           lastName?: string;
           legalDocuments?: Array<Id<"legalDocuments">>;
           notes?: any;
-          notificationProfileId?: Id<"notificationProfiles"> | null;
           phoneNumber?: string;
           primaryFormDefinitionId?: Id<"formDefinitions">;
           status?: string;
@@ -106,6 +221,12 @@ export type PublicApiType = {
       "mutation",
       "public",
       { clientId: Id<"clients"> },
+      any
+    >;
+    searchClients: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms">; searchName: string },
       any
     >;
   };
@@ -271,6 +392,145 @@ export type PublicApiType = {
       any
     >;
   };
+  formDefinitions: {
+    listGlobalForms: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    listCustomForms: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getFirmBaseForm: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    listFormsForSendFlow: FunctionReference<
+      "query",
+      "public",
+      { firmId?: Id<"firms"> },
+      any
+    >;
+    listFormsForFirm: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    createBlankForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        category: string;
+        firmId: Id<"firms">;
+        isBaseForm?: boolean;
+        language?: string;
+        name: string;
+      },
+      any
+    >;
+    renameForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions">; name: string },
+      any
+    >;
+    deleteForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions"> },
+      any
+    >;
+    getGlobalBaseForm: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    updateFormDefinition: FunctionReference<
+      "mutation",
+      "public",
+      {
+        formId: Id<"formDefinitions">;
+        updates: {
+          baseFormId?: Id<"formDefinitions">;
+          category?: string;
+          description?: string;
+          excludedBaseSections?: Array<string>;
+          isBaseForm?: boolean;
+          isSelfContained?: boolean;
+          language?: string;
+          name?: string;
+        };
+      },
+      any
+    >;
+    linkBaseForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        baseFormId?: Id<"formDefinitions">;
+        customFormId: Id<"formDefinitions">;
+      },
+      any
+    >;
+    setBaseSectionToggles: FunctionReference<
+      "mutation",
+      "public",
+      {
+        customFormId: Id<"formDefinitions">;
+        excludedBaseSections: Array<string>;
+      },
+      any
+    >;
+    forkForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        isBaseForm?: boolean;
+        name?: string;
+        sourceFormId: Id<"formDefinitions">;
+      },
+      any
+    >;
+    deleteBaseForm: FunctionReference<
+      "mutation",
+      "public",
+      { formId: Id<"formDefinitions"> },
+      any
+    >;
+    adminCreateCustomFormFromTemplate: FunctionReference<
+      "mutation",
+      "public",
+      {
+        category?: string;
+        firmId: Id<"firms">;
+        language?: string;
+        name: string;
+        questions: Array<{
+          dependsOn?: any;
+          externalId: string;
+          indication?: string;
+          isRequired?: boolean;
+          label: string;
+          multiEntryAddLabel?: string;
+          multiEntryFields?: any;
+          options?: any;
+          placeholder?: string;
+          section?: string;
+          type: string;
+        }>;
+      },
+      any
+    >;
+  };
   legalDocuments: {
     getLegalDocumentsByIds: FunctionReference<
       "query",
@@ -350,6 +610,14 @@ export type PublicApiType = {
       any
     >;
   };
+  questionTemplates: {
+    listTemplates: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+  };
   questions: {
     getFormQuestions: FunctionReference<
       "query",
@@ -391,12 +659,6 @@ export type PublicApiType = {
           validationRules?: any;
         }>;
       },
-      any
-    >;
-    setQuestionDependsOnBatch: FunctionReference<
-      "mutation",
-      "public",
-      { items: Array<{ dependsOn: any; externalId: string }> },
       any
     >;
     getQuestionsByExternalIds: FunctionReference<
@@ -624,153 +886,6 @@ export type PublicApiType = {
       any
     >;
   };
-  formDefinitions: {
-    listGlobalForms: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    listCustomForms: FunctionReference<
-      "query",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    getFirmBaseForm: FunctionReference<
-      "query",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    listFormsForSendFlow: FunctionReference<
-      "query",
-      "public",
-      { firmId?: Id<"firms"> },
-      any
-    >;
-    listFormsForFirm: FunctionReference<
-      "query",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    createBlankForm: FunctionReference<
-      "mutation",
-      "public",
-      {
-        category: string;
-        firmId: Id<"firms">;
-        isBaseForm?: boolean;
-        language?: string;
-        name: string;
-      },
-      any
-    >;
-    renameForm: FunctionReference<
-      "mutation",
-      "public",
-      { formId: Id<"formDefinitions">; name: string },
-      any
-    >;
-    deleteForm: FunctionReference<
-      "mutation",
-      "public",
-      { formId: Id<"formDefinitions"> },
-      any
-    >;
-    getGlobalBaseForm: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    updateFormDefinition: FunctionReference<
-      "mutation",
-      "public",
-      {
-        formId: Id<"formDefinitions">;
-        updates: {
-          baseFormId?: Id<"formDefinitions">;
-          category?: string;
-          description?: string;
-          excludedBaseSections?: Array<string>;
-          isBaseForm?: boolean;
-          isSelfContained?: boolean;
-          language?: string;
-          name?: string;
-        };
-      },
-      any
-    >;
-    linkBaseForm: FunctionReference<
-      "mutation",
-      "public",
-      {
-        baseFormId?: Id<"formDefinitions">;
-        customFormId: Id<"formDefinitions">;
-      },
-      any
-    >;
-    setBaseSectionToggles: FunctionReference<
-      "mutation",
-      "public",
-      {
-        customFormId: Id<"formDefinitions">;
-        excludedBaseSections: Array<string>;
-      },
-      any
-    >;
-    forkForm: FunctionReference<
-      "mutation",
-      "public",
-      {
-        firmId: Id<"firms">;
-        isBaseForm?: boolean;
-        name?: string;
-        sourceFormId: Id<"formDefinitions">;
-      },
-      any
-    >;
-    deleteBaseForm: FunctionReference<
-      "mutation",
-      "public",
-      { formId: Id<"formDefinitions"> },
-      any
-    >;
-    adminCreateCustomFormFromTemplate: FunctionReference<
-      "mutation",
-      "public",
-      {
-        category?: string;
-        firmId: Id<"firms">;
-        language?: string;
-        name: string;
-        questions: Array<{
-          dependsOn?: any;
-          externalId: string;
-          indication?: string;
-          isRequired?: boolean;
-          label: string;
-          multiEntryAddLabel?: string;
-          multiEntryFields?: any;
-          options?: any;
-          placeholder?: string;
-          section?: string;
-          type: string;
-        }>;
-      },
-      any
-    >;
-  };
-  questionTemplates: {
-    listTemplates: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-  };
   uploadedForms: {
     insertUploadedForm: FunctionReference<
       "mutation",
@@ -817,128 +932,6 @@ export type PublicApiType = {
       any
     >;
   };
-  admin: {
-    listAllFirms: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    getFirm: FunctionReference<"query", "public", { firmId: Id<"firms"> }, any>;
-    updateFirm: FunctionReference<
-      "mutation",
-      "public",
-      {
-        firmId: Id<"firms">;
-        updates: {
-          apiKey?: string;
-          displayName?: string;
-          membershipStatus?: string;
-          monthlyClientLimit?: number | null;
-          monthlyClientsRemaining?: number | null;
-          notificationProfileLimit?: number | null;
-          subscriptionEndDate?: number | null;
-          subscriptionStartDate?: number | null;
-        };
-      },
-      any
-    >;
-    createPendingFirm: FunctionReference<
-      "mutation",
-      "public",
-      {
-        displayName?: string;
-        membershipStatus: string;
-        monthlyClientLimit?: number;
-        monthlyClientsRemaining?: number;
-        pendingEmail: string;
-        subscriptionEndDate?: number;
-      },
-      any
-    >;
-    attachInvitationToFirm: FunctionReference<
-      "mutation",
-      "public",
-      {
-        firmId: Id<"firms">;
-        invitationSentAt: number;
-        workosInvitationId: string;
-      },
-      any
-    >;
-    attachWorkosUserToFirm: FunctionReference<
-      "mutation",
-      "public",
-      { pendingEmail: string; workosUserId: string },
-      any
-    >;
-    cancelPendingFirm: FunctionReference<
-      "mutation",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    deleteFirm: FunctionReference<
-      "mutation",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    listAllClients: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    listAllSubmissions: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    listAllErrorLogs: FunctionReference<
-      "query",
-      "public",
-      { limit?: number },
-      any
-    >;
-    getAllFirmsSubmissionStats: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    getGlobalSubmissionStats: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    getAiUsageByFirm: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    getFirmClientsDetail: FunctionReference<
-      "query",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    isCurrentUserAdmin: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-    listAllFormFeedback: FunctionReference<
-      "query",
-      "public",
-      Record<string, never>,
-      any
-    >;
-  };
   demandeTypes: {
     setDemandeType: FunctionReference<
       "mutation",
@@ -975,37 +968,6 @@ export type PublicApiType = {
       "mutation",
       "public",
       { clientId: Id<"clients">; demandeTypeId: Id<"demandeTypes"> },
-      any
-    >;
-    createFirmDemandeType: FunctionReference<
-      "mutation",
-      "public",
-      {
-        description?: string;
-        firmId: Id<"firms">;
-        legalDocumentIds: Array<Id<"legalDocuments">>;
-        name: string;
-      },
-      any
-    >;
-    updateFirmDemandeType: FunctionReference<
-      "mutation",
-      "public",
-      {
-        demandeTypeId: Id<"demandeTypes">;
-        firmId: Id<"firms">;
-        updates: {
-          description?: string;
-          legalDocumentIds?: Array<Id<"legalDocuments">>;
-          name?: string;
-        };
-      },
-      any
-    >;
-    deleteFirmDemandeType: FunctionReference<
-      "mutation",
-      "public",
-      { demandeTypeId: Id<"demandeTypes">; firmId: Id<"firms"> },
       any
     >;
   };
@@ -1060,42 +1022,6 @@ export type PublicApiType = {
       "query",
       "public",
       { firmId?: Id<"firms">; keys: Array<string> },
-      any
-    >;
-  };
-  notificationProfiles: {
-    listNotificationProfiles: FunctionReference<
-      "query",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    getNotificationProfileLimit: FunctionReference<
-      "query",
-      "public",
-      { firmId: Id<"firms"> },
-      any
-    >;
-    createNotificationProfile: FunctionReference<
-      "mutation",
-      "public",
-      { email: string; firmId: Id<"firms">; name: string },
-      any
-    >;
-    updateNotificationProfile: FunctionReference<
-      "mutation",
-      "public",
-      {
-        firmId: Id<"firms">;
-        profileId: Id<"notificationProfiles">;
-        updates: { email?: string; name?: string };
-      },
-      any
-    >;
-    deleteNotificationProfile: FunctionReference<
-      "mutation",
-      "public",
-      { firmId: Id<"firms">; profileId: Id<"notificationProfiles"> },
       any
     >;
   };
