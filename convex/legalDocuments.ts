@@ -261,6 +261,11 @@ type ImmIntakeMapping = {
     section?: string;
     page?: number;
     order?: number;
+    // Per-form conditional visibility. Overrides the canonical question's
+    // dependsOn for THIS form — so a question can be gated on one form and
+    // unconditional on another (the canonical dependsOn leaks across all
+    // forms). See INTAKE-REDUCTION-PLAN.md (Lever C).
+    dependsOn?: unknown;
   }>;
   requiredDocuments: Array<{
     key: string;
@@ -325,7 +330,7 @@ export const getIntakeForClient = query({
     // Dedup buckets keyed by externalId / document key.
     const questionsByExt = new Map<
       string,
-      { externalId: string; required: boolean; section?: string; page?: number; order?: number; sourcedFrom: string[] }
+      { externalId: string; required: boolean; section?: string; page?: number; order?: number; sourcedFrom: string[]; formDependsOn?: unknown }
     >();
     const documentsByKey = new Map<
       string,
@@ -350,6 +355,11 @@ export const getIntakeForClient = query({
         if (existing) {
           existing.required = existing.required || !!q.required;
           existing.sourcedFrom.push(ld.name ?? ld._id);
+          // First IMM with an explicit per-form dependsOn wins (consistent with
+          // section/page/order first-wins above).
+          if (existing.formDependsOn === undefined && q.dependsOn !== undefined) {
+            existing.formDependsOn = q.dependsOn;
+          }
         } else {
           questionsByExt.set(ext, {
             externalId: ext,
@@ -358,6 +368,7 @@ export const getIntakeForClient = query({
             page: q.page,
             order: q.order,
             sourcedFrom: [ld.name ?? ld._id],
+            formDependsOn: q.dependsOn,
           });
         }
       }
@@ -436,7 +447,13 @@ export const getIntakeForClient = query({
     const finalQuestions = enrichedQuestions.map((q) => {
       const cat = q.catalog?.category as string | undefined;
       const meta = cat ? categoryIndex.get(cat) : undefined;
-      return meta ? { ...q, section: meta.title } : q;
+      // Effective conditional visibility: a per-form dependsOn (from this form's
+      // immQuestions entry) overrides the canonical question's dependsOn. Lets a
+      // question be gated on one form and unconditional on another. The wizard
+      // should read this `dependsOn`, not `catalog.dependsOn`.
+      const dependsOn = q.formDependsOn ?? q.catalog?.dependsOn ?? undefined;
+      const base = { ...q, dependsOn };
+      return meta ? { ...base, section: meta.title } : base;
     });
 
     // Enrich each required-document stub with the full catalog config
@@ -479,7 +496,7 @@ export const getIntakeForClient = query({
       finalQuestions.filter((q) => ocrFillIds.has(q.externalId)).map((q) => q.externalId),
     );
     const conditional = new Set(
-      finalQuestions.filter((q) => q.catalog?.dependsOn).map((q) => q.externalId),
+      finalQuestions.filter((q) => q.dependsOn).map((q) => q.externalId),
     );
     const removable = new Set([...ocrFillable, ...conditional]);
     const stats = {

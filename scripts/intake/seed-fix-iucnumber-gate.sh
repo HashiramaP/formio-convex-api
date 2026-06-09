@@ -6,8 +6,11 @@
 # UCI field there. UCI is an optional field not actually tied to Canadian status,
 # so the correct fix is to make it unconditional everywhere.
 #
-# Proper long-term fix: per-form dependsOn (carry it on the immQuestions entry and
-# let getIntakeForClient override the canonical). See INTAKE-REDUCTION-PLAN.md.
+# DONE: per-form dependsOn is now implemented (getIntakeForClient uses
+# `formDependsOn ?? catalog.dependsOn`). The sponsorship gate for iucNumber lives
+# per-form in scripts/seed-imm1344fr-mapping.sh (on the iucNumber entry), so it
+# applies on IMM 1344 only. This script just keeps the CANONICAL question
+# unconditional so the gate can't leak onto other forms again.
 # Idempotent. Targets .env.local (dev).
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
