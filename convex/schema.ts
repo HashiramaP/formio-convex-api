@@ -30,6 +30,11 @@ export default defineSchema({
       })
     ),
     emailOverrides: v.optional(v.record(v.string(), v.string())),
+    // Per-firm template for naming documents downloaded for a client. Tokens
+    // like {nom} {prenom} {typeDocument} {dateUpload} {date} {courriel} are
+    // substituted at download time. Unset/empty = default naming. Opt-in: the
+    // feature is inert until a firm configures a template.
+    documentNamingTemplate: v.optional(v.string()),
   })
     .index("by_workosUserId", ["workosUserId"])
     .index("by_pendingEmail", ["pendingEmail"])

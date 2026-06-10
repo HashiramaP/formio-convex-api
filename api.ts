@@ -254,6 +254,12 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
+    setDocumentNamingTemplate: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; template: string },
+      any
+    >;
     upsertEmailOverride: FunctionReference<
       "mutation",
       "public",

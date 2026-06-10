@@ -171,6 +171,22 @@ export const getEmailOverrides = query({
   },
 });
 
+// Set (or clear) the firm's custom document-naming template. Passing an empty/
+// whitespace-only template clears it and restores the default naming.
+export const setDocumentNamingTemplate = mutation({
+  args: {
+    firmId: v.id("firms"),
+    template: v.string(),
+  },
+  handler: async (ctx, { firmId, template }) => {
+    await requireFirmAccess(ctx, firmId);
+    const trimmed = template.trim();
+    await ctx.db.patch(firmId, {
+      documentNamingTemplate: trimmed === "" ? undefined : trimmed,
+    });
+  },
+});
+
 export const upsertEmailOverride = mutation({
   args: {
     firmId: v.id("firms"),
