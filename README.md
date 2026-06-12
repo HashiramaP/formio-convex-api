@@ -28,22 +28,27 @@ by `convex-helpers ts-api-spec` — that's what frontends actually call.
 
 ```bash
 npm install
-cp .env.example .env.dev    # paste dev admin key
-cp .env.example .env.prod   # paste prod URL + admin key (only if deploying to prod)
+npx convex login     # log in to the Formio team (project: formio-db)
+npm run dev          # provisions your personal cloud dev deployment + writes .env.local
 ```
 
-Get an admin key from a deployment VM (one-time):
+Deploys use two more env files (gitignored — see `.env.example`):
+
+- `.env.staging` — `CONVEX_DEPLOY_KEY` minted from the **staging** cloud deployment
+- `.env.prod` — `CONVEX_SELF_HOSTED_URL` + `CONVEX_SELF_HOSTED_ADMIN_KEY` for the **self-hosted** prod backend
+
+Get the self-hosted prod admin key from its backend VM (one-time — adjust instance/project to your prod VM):
 
 ```bash
-gcloud compute ssh convex-dev --tunnel-through-iap --project formio-dev \
+gcloud compute ssh <prod-convex-vm> --tunnel-through-iap --project <prod-project> \
   --command "docker compose -f /mnt/data/convex/docker-compose.yml exec backend ./generate_admin_key.sh"
 ```
 
 ## Daily workflow
 
 ```bash
-npm run dev          # watches convex/, pushes to dev, regenerates _generated/
-npm run gen:api      # rebuilds api.ts from the dev deployment's public surface
+npm run dev          # watches convex/, pushes to your cloud dev deployment, regenerates _generated/
+npm run gen:api      # rebuilds api.ts from your dev deployment's public surface
 npm run typecheck
 ```
 
@@ -52,26 +57,44 @@ After changing schema or any public function:
 1. `npm run dev` (leave running) — pushes the change, refreshes `_generated/`
 2. `npm run gen:api` — rewrites `api.ts`
 3. Commit both `_generated/` and `api.ts`
-4. `npm run release:patch` (or `:minor` / `:major`) — see below
+4. Promote through staging → prod (see "Deploying" and "Cutting a release")
+
+## Environments
+
+| Env     | Convex backend                                       | Deploy with              |
+| ------- | ---------------------------------------------------- | ------------------------ |
+| dev     | your personal **cloud dev** deployment (`formio-db`) | `npm run dev` (watch)    |
+| staging | shared **cloud** `staging` deployment (`formio-db`)  | `npm run deploy:staging` |
+| prod    | **self-hosted** backend (Canada)                     | `npm run deploy:prod`    |
+
+`formio-db`'s default cloud prod deployment is reserved for the future Convex-Canada
+migration — never deploy to it. `deploy:staging` refuses to run unless
+`CONVEX_DEPLOY_KEY` is set in `.env.staging`, so a bare `convex deploy` can't reach it.
+
+> ⚠️ Cloud dev + staging have no Canada region — that's why prod is self-hosted.
+> Never put real client PII on them; seed with the synthetic `scripts/seed-*.sh` data only.
 
 ## Deploying
 
 ```bash
-npm run deploy   # → api-convex-prod.formio.ca (reads .env.prod)
+npm run deploy:staging   # cloud staging (reads CONVEX_DEPLOY_KEY from .env.staging)
+npm run deploy:prod      # self-hosted prod (reads .env.prod)
 ```
 
-Dev stays in sync via `npm run dev`'s watch mode — no separate dev deploy needed.
+Your dev deployment stays in sync via `npm run dev`'s watch mode — no separate dev deploy needed.
 
 ## Cutting a release
 
+Releases regenerate `api.ts` from the **staging** deployment, so deploy there first:
+
 ```bash
-npm run release:patch   # 0.0.0 → 0.0.1
-npm run release:minor   # 0.0.0 → 0.1.0
-npm run release:major   # 0.0.0 → 1.0.0
+npm run deploy:staging   # push the new code to staging, then verify it
+npm run release:patch    # 0.0.0 → 0.0.1   (also release:minor / release:major)
 ```
 
-Each script regenerates `api.ts`, typechecks, bumps `package.json`, commits +
-tags `vX.Y.Z`, deploys to prod, then pushes. Frontends pin to that tag.
+Each `release:*` runs `npm version`, whose hook regenerates `api.ts` from staging,
+typechecks, bumps `package.json`, commits + tags `vX.Y.Z`, deploys to **prod**
+(self-hosted), then pushes. Frontends pin to that tag.
 
 Requires a clean working tree to start (commit your changes first).
 
@@ -106,7 +129,7 @@ function MessagesView() {
 Each frontend's `.env`:
 
 ```sh
-VITE_CONVEX_URL=https://api-convex-dev.formio.ca
+VITE_CONVEX_URL=https://<your-dev-deployment>.convex.cloud   # staging/prod URLs differ per env
 ```
 
 Wrap the app with `<ConvexProvider client={convex}>…</ConvexProvider>`.

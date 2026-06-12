@@ -16,13 +16,16 @@
   ],
   "scripts": {
     "dev": "convex dev",
-    "deploy": "dotenv -e .env.prod -- convex deploy",
+    "deploy:staging": "npm run -s _check:staging-key && dotenv -e .env.staging -- convex deploy",
+    "deploy:prod": "dotenv -e .env.prod -- convex deploy",
     "gen:api": "convex-helpers ts-api-spec --output-file api.ts",
+    "gen:api:staging": "npm run -s _check:staging-key && dotenv -e .env.staging -- convex-helpers ts-api-spec --output-file api.ts",
+    "_check:staging-key": "dotenv -e .env.staging -- sh -c 'test -n \"$CONVEX_DEPLOY_KEY\" || { echo \"ERROR: CONVEX_DEPLOY_KEY missing in .env.staging - refusing (a bare convex deploy would target the reserved default prod). Mint a deploy key from the staging deployment.\"; exit 1; }'",
     "typecheck": "tsc --noEmit",
-    "version": "npm run gen:api && npm run typecheck && git add api.ts",
-    "release:patch": "npm version patch && npm run deploy && git push --follow-tags",
-    "release:minor": "npm version minor && npm run deploy && git push --follow-tags",
-    "release:major": "npm version major && npm run deploy && git push --follow-tags"
+    "version": "npm run gen:api:staging && npm run typecheck && git add api.ts",
+    "release:patch": "npm version patch && npm run deploy:prod && git push --follow-tags",
+    "release:minor": "npm version minor && npm run deploy:prod && git push --follow-tags",
+    "release:major": "npm version major && npm run deploy:prod && git push --follow-tags"
   },
   "peerDependencies": {
     "convex": "^1.17.0"
