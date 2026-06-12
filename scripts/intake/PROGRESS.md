@@ -11,7 +11,12 @@ uploaded).
 - **Multi-parent `dependsOn`** — OR across gates (`[{questionId,value},…]`), evaluated in formioform `UnifiedWizard` + Formio `formSections.isFieldVisible`.
 - **OCR-fill validator** (`tools/validate-ocr-fills.mjs`) + the headless XFA extractor (`tools/extract-imm-xfa.mjs`, now AcroForm-aware).
 
-## Forms enriched: 13 / 44
+## Forms enriched: 22 / 44 — ALL FR IRCC forms done
+
+(Table below lists the first batch; later batches: 5708, 5257en, batch1 (1294/1295/
+5475/5562), 5707 + family forms (5406/5645/0008DEP → one `familyMembers` multi-entry),
+batch3 (5646/5444/5481/5604/5409). See `seed-*.sh` + `data/`.)
+
 | Form | Q | net | notes |
 |---|---|---|---|
 | IMM 1344 fr | 107 | — | pre-existing (sponsorship) |
@@ -31,15 +36,11 @@ uploaded).
 Seed scripts: `seed-imm{5710,5257,5708}fr.sh`, `seed-imm5257en.sh`, `seed-batch1-permits.sh`,
 plus fixes `seed-fix-nationalid-document.sh`, `seed-fix-iucnumber-gate.sh`. All idempotent, target dev (`.env.local`).
 
-## Remaining empty FR: 11
-- **XFA, ready to map (5):** IMM 5646, 0008DEP (additional dependants), 5707, 5444, 5481.
-  Family-info / declaration / checklist forms — NOT permit clones; need real per-form
-  authoring (new concepts e.g. family-member multi-entry).
-- **AcroForm, need a text-based path (3):** IMM 5645, 5604, 5409 — non-XFA PDFs
-  (`allXfaHtml` null); labels live in the static text layer + AcroForm field names.
-  The XFA extractor flags these (`needsFallback`); a text/AcroForm extractor is TODO.
-- **5406** — only at the legacy migration URL (`…/migration/ircc/francais/pdf/trousses/form/imm5406f.pdf`); format TBD.
-- **2 PEQ (Québec) forms** have no canada.ca URL — out of scope.
+## Remaining
+- **FR IRCC: none** — all enriched.
+- **2 PEQ (Québec) forms** — handled by Parsa directly in the forms section (custom forms), not the legalDocuments immQuestions path.
+- **EN variants (~20):** parked. Each is near-free — reuse the FR externalIds, translate label/section (see seed-imm5257en.sh).
+- **AcroForm note:** 5645/5604/5409 were non-XFA; mapped from the PDF static text (5645 → familyMembers; 5604/5409 = short declarations). No general AcroForm extractor was needed.
 
 ## Known issues / TODO
 - **Catalog duplicates** from prior work: `ptv_014`≈`familyMemberDisorder`, `ptv_018`≈`overstayedStatus`, `hasGreenCard`≈`hasUsPrCard`, `empJobTitle` (current job) vs `jobTitle` (intended). Worth a dedup/cleanup pass so future mappings have one obvious id per concept.
