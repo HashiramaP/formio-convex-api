@@ -15,3 +15,6 @@ Use `ADMIN_WORKOS_USER_IDS`, this is simpler with WorkOS than email-based allowl
 
 - Match admins by WorkOS user ID (JWT `sub` claim)
 - Set via: `npx convex env set ADMIN_WORKOS_USER_IDS=user_001,user_002,...`
+
+
+See README.md for deployment & releases.

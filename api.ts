@@ -230,6 +230,99 @@ export type PublicApiType = {
       any
     >;
   };
+  demandeTypes: {
+    setDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      {
+        category?: string;
+        description?: string;
+        firmId?: Id<"firms">;
+        legalDocumentIds: Array<Id<"legalDocuments">>;
+        name: string;
+        slug: string;
+      },
+      any
+    >;
+    listDemandeTypes: FunctionReference<
+      "query",
+      "public",
+      { category?: string; firmId?: Id<"firms"> },
+      any
+    >;
+    getDemandeType: FunctionReference<
+      "query",
+      "public",
+      { id: Id<"demandeTypes"> },
+      any
+    >;
+    getDemandeTypeBySlug: FunctionReference<
+      "query",
+      "public",
+      { slug: string },
+      any
+    >;
+    attachDemandeToClient: FunctionReference<
+      "mutation",
+      "public",
+      { clientId: Id<"clients">; demandeTypeId: Id<"demandeTypes"> },
+      any
+    >;
+  };
+  documents: {
+    setDocumentConfig: FunctionReference<
+      "mutation",
+      "public",
+      {
+        expectedDocumentType: string;
+        fills: Array<{
+          displayLabel: string;
+          externalId: string;
+          sourceKey: string;
+          transform?: string;
+        }>;
+        firmId?: Id<"firms">;
+        key: string;
+        name: string;
+        prompt: string;
+        skipNameVerification?: boolean;
+      },
+      any
+    >;
+    seedCanonicalDocuments: FunctionReference<
+      "mutation",
+      "public",
+      {
+        documents: Array<{
+          expectedDocumentType: string;
+          fills: Array<{
+            displayLabel: string;
+            externalId: string;
+            sourceKey: string;
+            transform?: string;
+          }>;
+          firmId?: Id<"firms">;
+          key: string;
+          name: string;
+          prompt: string;
+          skipNameVerification?: boolean;
+        }>;
+      },
+      any
+    >;
+    listDocuments: FunctionReference<
+      "query",
+      "public",
+      { firmId?: Id<"firms"> },
+      any
+    >;
+    getDocumentsByKeys: FunctionReference<
+      "query",
+      "public",
+      { firmId?: Id<"firms">; keys: Array<string> },
+      any
+    >;
+  };
   errorLogs: {
     logError: FunctionReference<
       "mutation",
@@ -929,99 +1022,6 @@ export type PublicApiType = {
       "mutation",
       "public",
       { batchId: string; firmId: Id<"firms"> },
-      any
-    >;
-  };
-  demandeTypes: {
-    setDemandeType: FunctionReference<
-      "mutation",
-      "public",
-      {
-        category?: string;
-        description?: string;
-        firmId?: Id<"firms">;
-        legalDocumentIds: Array<Id<"legalDocuments">>;
-        name: string;
-        slug: string;
-      },
-      any
-    >;
-    listDemandeTypes: FunctionReference<
-      "query",
-      "public",
-      { category?: string; firmId?: Id<"firms"> },
-      any
-    >;
-    getDemandeType: FunctionReference<
-      "query",
-      "public",
-      { id: Id<"demandeTypes"> },
-      any
-    >;
-    getDemandeTypeBySlug: FunctionReference<
-      "query",
-      "public",
-      { slug: string },
-      any
-    >;
-    attachDemandeToClient: FunctionReference<
-      "mutation",
-      "public",
-      { clientId: Id<"clients">; demandeTypeId: Id<"demandeTypes"> },
-      any
-    >;
-  };
-  documents: {
-    setDocumentConfig: FunctionReference<
-      "mutation",
-      "public",
-      {
-        expectedDocumentType: string;
-        fills: Array<{
-          displayLabel: string;
-          externalId: string;
-          sourceKey: string;
-          transform?: string;
-        }>;
-        firmId?: Id<"firms">;
-        key: string;
-        name: string;
-        prompt: string;
-        skipNameVerification?: boolean;
-      },
-      any
-    >;
-    seedCanonicalDocuments: FunctionReference<
-      "mutation",
-      "public",
-      {
-        documents: Array<{
-          expectedDocumentType: string;
-          fills: Array<{
-            displayLabel: string;
-            externalId: string;
-            sourceKey: string;
-            transform?: string;
-          }>;
-          firmId?: Id<"firms">;
-          key: string;
-          name: string;
-          prompt: string;
-          skipNameVerification?: boolean;
-        }>;
-      },
-      any
-    >;
-    listDocuments: FunctionReference<
-      "query",
-      "public",
-      { firmId?: Id<"firms"> },
-      any
-    >;
-    getDocumentsByKeys: FunctionReference<
-      "query",
-      "public",
-      { firmId?: Id<"firms">; keys: Array<string> },
       any
     >;
   };
