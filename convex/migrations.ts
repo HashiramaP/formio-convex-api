@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
+import { recomputeClientStatus } from "./submissions";
 
 export const insertFirms = internalMutation({
   args: {
@@ -850,6 +851,30 @@ export const remapClientStatuses = internalMutation({
         await ctx.db.patch(c._id, { status: target });
         updated++;
         counts[target] = (counts[target] ?? 0) + 1;
+      }
+    }
+    return { updated, total: clients.length, counts };
+  },
+});
+
+// One-shot backfill: client.status was only written at creation + by the prod
+// migration, so it drifted out of sync with submissions — finished forms stayed
+// stuck in the dashboard "En cours" column. Recompute every client's status from
+// live submission/supplement state via the same helper used at write time.
+// Idempotent: only patches rows whose computed status differs.
+export const backfillClientStatusesFromSubmissions = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const clients = await ctx.db.query("clients").collect();
+    let updated = 0;
+    const counts: Record<string, number> = {};
+    for (const c of clients) {
+      const before = c.status;
+      await recomputeClientStatus(ctx, c._id);
+      const after = (await ctx.db.get(c._id))?.status;
+      if (after && after !== before) {
+        updated++;
+        counts[after] = (counts[after] ?? 0) + 1;
       }
     }
     return { updated, total: clients.length, counts };

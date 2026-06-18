@@ -1,6 +1,65 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { requireFirmAccess, requireSubmissionAccess } from "./auth";
+
+/**
+ * Recompute a client's pipeline status ("new" | "in_progress" | "submitted")
+ * from the live state of its submissions and supplement requests.
+ *
+ * The console dashboard buckets clients into the Pas commencé / En cours /
+ * Soumis columns purely off `client.status`. That field used to be written only
+ * at creation and by the prod data migration, so it drifted out of sync with
+ * submissions — finished forms stayed stuck in "En cours". Calling this whenever
+ * a submission changes state keeps the column in sync with the card badge.
+ *
+ * Rules (a case with several linked submissions only counts as submitted once
+ * every submission is submitted):
+ *   - active (pending/in_progress) supplement request  -> "in_progress"
+ *   - no submissions                                    -> "new"
+ *   - every submission submitted                        -> "submitted"
+ *   - otherwise                                         -> "in_progress"
+ */
+export async function recomputeClientStatus(
+  ctx: MutationCtx,
+  clientId: Id<"clients">,
+) {
+  const client = await ctx.db.get(clientId);
+  if (!client) return;
+
+  // A pending/in_progress supplement keeps the case open even when every
+  // submission is submitted (mirrors supplementRequests.ts).
+  const supplements = await ctx.db
+    .query("supplementRequests")
+    .withIndex("by_firm_status", (q) => q.eq("firmId", client.firmId))
+    .collect();
+  const hasActiveSupplement = supplements.some(
+    (r) =>
+      r.clientId === clientId &&
+      (r.status === "pending" || r.status === "in_progress"),
+  );
+
+  const submissions = await ctx.db
+    .query("submissions")
+    .withIndex("by_client", (q) => q.eq("clientId", clientId))
+    .collect();
+
+  let status: string;
+  if (hasActiveSupplement) {
+    status = "in_progress";
+  } else if (submissions.length === 0) {
+    status = "new";
+  } else if (submissions.every((s) => s.status === "submitted")) {
+    status = "submitted";
+  } else {
+    status = "in_progress";
+  }
+
+  if (client.status !== status) {
+    await ctx.db.patch(clientId, { status });
+  }
+}
 
 // Most submission functions are called by form-website (anonymous) using
 // submissionId from the URL. URL-as-token model: leave open. Dashboard-only
@@ -113,6 +172,8 @@ export const initGroupedSubmissions = mutation({
       });
     }
 
+    await recomputeClientStatus(ctx, clientId);
+
     return { alreadyExists: false as const, groupId, submissions };
   },
 });
@@ -184,6 +245,8 @@ export const initSubmission = mutation({
       metadata: {},
       preferredLanguage,
     });
+
+    await recomputeClientStatus(ctx, clientId);
 
     return {
       alreadySubmitted: false as const,
@@ -284,6 +347,10 @@ export const completeSubmission = mutation({
         submitted_at: new Date().toISOString(),
       },
     });
+
+    if (submission.clientId) {
+      await recomputeClientStatus(ctx, submission.clientId);
+    }
   },
 });
 
