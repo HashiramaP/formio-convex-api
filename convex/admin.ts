@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { isAdmin, requireAdmin, requireWorkosUserId, AuthError } from "./auth";
 
 // Admin-only functions. Every handler calls `requireAdmin(ctx)` which checks
@@ -435,5 +436,158 @@ export const listAllFormFeedback = query({
           };
         }),
     );
+  },
+});
+
+// Staging cleanup: keeps only ~20 most recent clients per firm, cascades delete
+// all related data (submissions, documents, errors, logs, etc.). Admin-only.
+export const cleanupStagingData = mutation({
+  args: {
+    samplesPerFirm: v.number(),
+  },
+  handler: async (ctx, { samplesPerFirm }) => {
+    await requireAdmin(ctx);
+
+    const firms = await ctx.db.query("firms").collect();
+    const report = {
+      totalDeleted: 0,
+      firmDetails: [] as Array<{
+        firmId: string;
+        displayName?: string;
+        deleted: number;
+      }>,
+    };
+
+    for (const firm of firms) {
+      const clients = await ctx.db
+        .query("clients")
+        .withIndex("by_firm", (q) => q.eq("firmId", firm._id))
+        .collect();
+
+      // Sort by creation time descending (newest first), keep first N
+      const clientsToKeep = clients
+        .sort((a, b) => b._creationTime - a._creationTime)
+        .slice(0, samplesPerFirm);
+      const keepIds = new Set(clientsToKeep.map((c) => c._id));
+
+      const clientsToDelete = clients.filter((c) => !keepIds.has(c._id));
+
+      for (const client of clientsToDelete) {
+        await ctx.scheduler.runAfter(
+          0,
+          internal.admin.deleteClientWithCascades,
+          { clientId: client._id },
+        );
+      }
+
+      report.totalDeleted += clientsToDelete.length;
+      report.firmDetails.push({
+        firmId: firm._id,
+        displayName: firm.displayName,
+        deleted: clientsToDelete.length,
+      });
+    }
+
+    return report;
+  },
+});
+
+// Internal mutation: cascade-delete a client and all related data
+// (submissions, submission documents, supplement requests, generated legal docs,
+// error logs, feedback, AI usage logs).
+export const deleteClientWithCascades = internalMutation({
+  args: { clientId: v.id("clients") },
+  handler: async (ctx, { clientId }) => {
+    const client = await ctx.db.get(clientId);
+    if (!client) return { success: false, reason: "client not found" };
+
+    // Phase 1: collect all submissions for this client
+    const submissions = await ctx.db
+      .query("submissions")
+      .withIndex("by_client", (q) => q.eq("clientId", clientId))
+      .collect();
+    const submissionIds = submissions.map((s) => s._id);
+
+    // Phase 2: delete all submission documents
+    for (const submissionId of submissionIds) {
+      const docs = await ctx.db
+        .query("submissionDocuments")
+        .withIndex("by_submission", (q) => q.eq("submissionId", submissionId))
+        .collect();
+      for (const doc of docs) {
+        await ctx.db.delete(doc._id);
+      }
+    }
+
+    // Phase 3: delete all supplement requests and related entities for each submission
+    for (const submissionId of submissionIds) {
+      // Supplement requests
+      const supps = await ctx.db
+        .query("supplementRequests")
+        .withIndex("by_submission", (q) => q.eq("submissionId", submissionId))
+        .collect();
+      for (const supp of supps) {
+        await ctx.db.delete(supp._id);
+      }
+
+      // Feedback entries
+      const feedbacks = await ctx.db
+        .query("feedback")
+        .withIndex("by_submission", (q) => q.eq("submissionId", submissionId))
+        .collect();
+      for (const fb of feedbacks) {
+        await ctx.db.delete(fb._id);
+      }
+
+      // AI usage logs (no index on submissionId, use filter)
+      const aiLogs = await ctx.db
+        .query("aiUsageLogs")
+        .filter((q) => q.eq(q.field("submissionId"), submissionId))
+        .collect();
+      for (const log of aiLogs) {
+        await ctx.db.delete(log._id);
+      }
+
+      // Error logs related to this submission
+      const errorLogs = await ctx.db
+        .query("errorLogs")
+        .filter((q) => q.eq(q.field("submissionId"), submissionId))
+        .collect();
+      for (const log of errorLogs) {
+        await ctx.db.delete(log._id);
+      }
+    }
+
+    // Phase 4: delete all submissions
+    for (const submissionId of submissionIds) {
+      await ctx.db.delete(submissionId);
+    }
+
+    // Phase 5: delete all generated legal documents for this client
+    const legalDocs = await ctx.db
+      .query("generatedLegalDocs")
+      .filter((q) => q.eq(q.field("clientId"), clientId))
+      .collect();
+    for (const doc of legalDocs) {
+      await ctx.db.delete(doc._id);
+    }
+
+    // Phase 6: delete all error logs for this client (not yet deleted by submission)
+    const clientErrorLogs = await ctx.db
+      .query("errorLogs")
+      .filter((q) => q.eq(q.field("clientId"), clientId))
+      .collect();
+    for (const log of clientErrorLogs) {
+      await ctx.db.delete(log._id);
+    }
+
+    // Phase 7: finally, delete the client
+    await ctx.db.delete(clientId);
+
+    return {
+      success: true,
+      clientId,
+      submissionsDeleted: submissionIds.length,
+    };
   },
 });
