@@ -125,6 +125,12 @@ export type PublicApiType = {
       Record<string, never>,
       any
     >;
+    cleanupStagingData: FunctionReference<
+      "mutation",
+      "public",
+      { samplesPerFirm: number },
+      any
+    >;
   };
   aiUsageLogs: {
     logOcrTransaction: FunctionReference<
@@ -834,6 +840,24 @@ export type PublicApiType = {
     >;
   };
   submissions: {
+    checkGroupCompletion: FunctionReference<
+      "query",
+      "public",
+      { submissionId: Id<"submissions"> },
+      any
+    >;
+    completeSubmission: FunctionReference<
+      "mutation",
+      "public",
+      { startedAt?: string; submissionId: Id<"submissions"> },
+      any
+    >;
+    deleteSubmission: FunctionReference<
+      "mutation",
+      "public",
+      { submissionId: Id<"submissions"> },
+      any
+    >;
     getSubmission: FunctionReference<
       "query",
       "public",
@@ -868,6 +892,12 @@ export type PublicApiType = {
       },
       any
     >;
+    listClientSubmissions: FunctionReference<
+      "query",
+      "public",
+      { clientId: Id<"clients">; firmId: Id<"firms"> },
+      any
+    >;
     markStarted: FunctionReference<
       "mutation",
       "public",
@@ -891,18 +921,6 @@ export type PublicApiType = {
       { answers: any; submissionId: Id<"submissions">; translatedValues?: any },
       any
     >;
-    completeSubmission: FunctionReference<
-      "mutation",
-      "public",
-      { startedAt?: string; submissionId: Id<"submissions"> },
-      any
-    >;
-    listClientSubmissions: FunctionReference<
-      "query",
-      "public",
-      { clientId: Id<"clients">; firmId: Id<"firms"> },
-      any
-    >;
     updateSubmissionFromDashboard: FunctionReference<
       "mutation",
       "public",
@@ -916,18 +934,6 @@ export type PublicApiType = {
           title?: string;
         };
       },
-      any
-    >;
-    deleteSubmission: FunctionReference<
-      "mutation",
-      "public",
-      { submissionId: Id<"submissions"> },
-      any
-    >;
-    checkGroupCompletion: FunctionReference<
-      "query",
-      "public",
-      { submissionId: Id<"submissions"> },
       any
     >;
   };
