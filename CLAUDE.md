@@ -18,19 +18,12 @@ Use `ADMIN_WORKOS_USER_IDS`, this is simpler with WorkOS than email-based allowl
 
 ## Deploying & data ops
 
-README.md has the basics (env table, `deploy:staging`/`deploy:prod`, `release:*`). Environments: **dev** = personal cloud deployment (`npm run dev` watch, no separate deploy); **staging** = shared cloud `brainy-lyrebird-141` (`npm run deploy:staging`); **prod** = self-hosted Canada `api-convex-prod.formio.ca` (`npm run deploy:prod`). Non-obvious gotchas:
+Commands in README.md; full runbook + history in [`docs/DEPLOY.md`](docs/DEPLOY.md). Environments: **dev** = personal cloud (`npm run dev` watch); **staging** = shared cloud `brainy-lyrebird-141` (`npm run deploy:staging`); **prod** = self-hosted Canada `api-convex-prod.formio.ca` (`npm run deploy:prod`). Must-knows before you touch prod or a release:
 
-- **Self-hosted prod deploy/run conflicts with `.env.local`.** `.env.local` pins `CONVEX_DEPLOYMENT=dev:…`, and the CLI re-reads that *file* from the project dir, so any `convex deploy`/`convex run` against prod fails: `CONVEX_DEPLOYMENT must not be set when CONVEX_SELF_HOSTED_URL…`. `env -u CONVEX_DEPLOYMENT` does **not** help (the file wins). Fix: temporarily move `.env.local` aside, with a trap so it's always restored:
-  ```bash
-  trap "mv -f .env.local.bak .env.local 2>/dev/null" EXIT
-  mv .env.local .env.local.bak
-  npm run deploy:prod   # or: ./node_modules/.bin/dotenv -e .env.prod -- ./node_modules/.bin/convex run <fn>
-  ```
-  Use the **local** binaries — a bare `dotenv` resolves to the Python one which rejects `-e <file>`.
-- **`release:patch` can half-finish.** It runs `npm version patch` (the `version` hook regenerates `api.ts` + typechecks + commits + tags `vX.Y.Z`) → `deploy:prod` → `git push --follow-tags`. If `deploy:prod` fails on the `.env.local` conflict above, the version commit + tag have **already landed** — do NOT re-run `npm version`. Just finish `deploy:prod` (with `.env.local` moved aside) then `git push --follow-tags`.
-- **`gen:api` introspects the DEV deployment, not staging/main.** `gen:api` (`convex-helpers ts-api-spec`) reads a *live* deployment via env, and with no override the CLI loads `.env.local` → dev. The `version` hook runs it, so `release:*` bakes **whatever is currently on dev** into the published `api.ts`. Since `npm run dev` continuously pushes your working tree to dev, treat dev as **frozen between `deploy:staging` and the cut release tag** — don't start the next feature's `npm run dev` until the tag is cut, or its API surface leaks into the release (e.g. v0.0.27 wrongly shipped `notificationProfile*` and dropped `searchClients`). Staging isn't used for this because `.env.staging`'s deploy key lacks `ViewData`, so `ts-api-spec` against staging fails — hence the removed `gen:api:staging`.
-- **Staging data ops need the logged-in session.** `.env.staging`'s `CONVEX_DEPLOY_KEY` is deploy-only (no `ViewData`), so `convex run`/`data`/`import` against staging must run under your `~/.convex` login with `CONVEX_DEPLOYMENT`/`CONVEX_DEPLOY_KEY` unset and `--deployment brainy-lyrebird-141`.
-- **`migrations:backfillClientStatusesFromSubmissions`** recomputes every client's pipeline status (`new`/`in_progress`/`submitted`) from its submissions; idempotent. Run it after deploying changes to that logic so existing rows are reconciled.
-- **Compliance:** cloud dev/staging are not in a Canada region — never copy real client PII there (firm-only records are fine).
+- **Self-hosted prod deploy/run needs `.env.local` moved aside** (it pins `CONVEX_DEPLOYMENT`, which conflicts with the self-hosted vars; `env -u` doesn't help). See DEPLOY.md for the trap snippet.
+- **`release:patch` predictably fails at `deploy:prod`** on that conflict — but the version bump + tag already landed, so don't re-run `npm version`; just finish the deploy (`.env.local` aside) + `git push --follow-tags`.
+- **`gen:api`/`release:*` build `api.ts` from the DEV deployment** — freeze dev (no new `npm run dev`) between `deploy:staging` and the cut tag, or a feature's API surface leaks into the release.
+- **Staging data ops** (`convex run`/`data`/`import`) need your `~/.convex` login, not the deploy-only `.env.staging` key.
+- **Compliance:** never copy real client PII to cloud dev/staging (not Canada-region); firm-only records are fine.
 
-See README.md for deployment & releases.
+After changing client-status logic, run `migrations:backfillClientStatusesFromSubmissions` (idempotent) to reconcile existing rows.
