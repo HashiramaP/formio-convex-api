@@ -16,5 +16,20 @@ Use `ADMIN_WORKOS_USER_IDS`, this is simpler with WorkOS than email-based allowl
 - Match admins by WorkOS user ID (JWT `sub` claim)
 - Set via: `npx convex env set ADMIN_WORKOS_USER_IDS=user_001,user_002,...`
 
+## Deploying & data ops
+
+README.md has the basics (env table, `deploy:staging`/`deploy:prod`, `release:*`). Environments: **dev** = personal cloud deployment (`npm run dev` watch, no separate deploy); **staging** = shared cloud `brainy-lyrebird-141` (`npm run deploy:staging`); **prod** = self-hosted Canada `api-convex-prod.formio.ca` (`npm run deploy:prod`). Non-obvious gotchas:
+
+- **Self-hosted prod deploy/run conflicts with `.env.local`.** `.env.local` pins `CONVEX_DEPLOYMENT=dev:…`, and the CLI re-reads that *file* from the project dir, so any `convex deploy`/`convex run` against prod fails: `CONVEX_DEPLOYMENT must not be set when CONVEX_SELF_HOSTED_URL…`. `env -u CONVEX_DEPLOYMENT` does **not** help (the file wins). Fix: temporarily move `.env.local` aside, with a trap so it's always restored:
+  ```bash
+  trap "mv -f .env.local.bak .env.local 2>/dev/null" EXIT
+  mv .env.local .env.local.bak
+  npm run deploy:prod   # or: ./node_modules/.bin/dotenv -e .env.prod -- ./node_modules/.bin/convex run <fn>
+  ```
+  Use the **local** binaries — a bare `dotenv` resolves to the Python one which rejects `-e <file>`.
+- **`release:patch` can half-finish.** It runs `npm version patch` (the `version` hook regenerates `api.ts` + typechecks + commits + tags `vX.Y.Z`) → `deploy:prod` → `git push --follow-tags`. If `deploy:prod` fails on the `.env.local` conflict above, the version commit + tag have **already landed** — do NOT re-run `npm version`. Just finish `deploy:prod` (with `.env.local` moved aside) then `git push --follow-tags`.
+- **Staging data ops need the logged-in session.** `.env.staging`'s `CONVEX_DEPLOY_KEY` is deploy-only (no `ViewData`), so `convex run`/`data`/`import` against staging must run under your `~/.convex` login with `CONVEX_DEPLOYMENT`/`CONVEX_DEPLOY_KEY` unset and `--deployment brainy-lyrebird-141`.
+- **`migrations:backfillClientStatusesFromSubmissions`** recomputes every client's pipeline status (`new`/`in_progress`/`submitted`) from its submissions; idempotent. Run it after deploying changes to that logic so existing rows are reconciled.
+- **Compliance:** cloud dev/staging are not in a Canada region — never copy real client PII there (firm-only records are fine).
 
 See README.md for deployment & releases.
