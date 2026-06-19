@@ -15,11 +15,13 @@ import { requireFirmAccess, requireSubmissionAccess } from "./auth";
  * a submission changes state keeps the column in sync with the card badge.
  *
  * Rules (a case with several linked submissions only counts as submitted once
- * every submission is submitted):
+ * every submission is submitted; "started" = the applicant actually answered
+ * something, so merely opening a link keeps the client in "Pas commencé"):
  *   - active (pending/in_progress) supplement request  -> "in_progress"
  *   - no submissions                                    -> "new"
  *   - every submission submitted                        -> "submitted"
- *   - otherwise                                         -> "in_progress"
+ *   - at least one submission started                   -> "in_progress"
+ *   - submissions exist but none started yet            -> "new"
  */
 export async function recomputeClientStatus(
   ctx: MutationCtx,
@@ -45,6 +47,14 @@ export async function recomputeClientStatus(
     .withIndex("by_client", (q) => q.eq("clientId", clientId))
     .collect();
 
+  // A submission only counts as "started" once the applicant has answered
+  // something. started_at is stamped on the first answer; the answers check
+  // covers legacy rows that predate that stamp.
+  const hasStarted = (s: (typeof submissions)[number]) =>
+    s.status === "submitted" ||
+    !!(s.metadata as Record<string, unknown> | null)?.started_at ||
+    Object.keys((s.answers as Record<string, unknown>) ?? {}).length > 0;
+
   let status: string;
   if (hasActiveSupplement) {
     status = "in_progress";
@@ -52,8 +62,10 @@ export async function recomputeClientStatus(
     status = "new";
   } else if (submissions.every((s) => s.status === "submitted")) {
     status = "submitted";
-  } else {
+  } else if (submissions.some(hasStarted)) {
     status = "in_progress";
+  } else {
+    status = "new";
   }
 
   if (client.status !== status) {
@@ -172,8 +184,6 @@ export const initGroupedSubmissions = mutation({
       });
     }
 
-    await recomputeClientStatus(ctx, clientId);
-
     return { alreadyExists: false as const, groupId, submissions };
   },
 });
@@ -246,8 +256,6 @@ export const initSubmission = mutation({
       preferredLanguage,
     });
 
-    await recomputeClientStatus(ctx, clientId);
-
     return {
       alreadySubmitted: false as const,
       submissionId: id,
@@ -284,7 +292,9 @@ export const saveAnswer = mutation({
     const submission = await ctx.db.get(submissionId);
     if (!submission) throw new Error("Submission not found");
 
-    const answers = { ...((submission.answers as Record<string, unknown>) ?? {}) };
+    const existingAnswers = (submission.answers as Record<string, unknown>) ?? {};
+    const wasEmpty = Object.keys(existingAnswers).length === 0;
+    const answers = { ...existingAnswers };
     answers[questionId] = value;
 
     const update: Record<string, unknown> = { answers };
@@ -298,6 +308,11 @@ export const saveAnswer = mutation({
     }
 
     await ctx.db.patch(submissionId, update);
+
+    // First answer on this submission: the client has now started -> En cours.
+    if (wasEmpty && submission.clientId) {
+      await recomputeClientStatus(ctx, submission.clientId);
+    }
   },
 });
 
@@ -326,6 +341,13 @@ export const saveInitialAnswers = mutation({
     }
 
     await ctx.db.patch(submissionId, update);
+
+    if (
+      submission.clientId &&
+      Object.keys(newAnswers as Record<string, unknown>).length > 0
+    ) {
+      await recomputeClientStatus(ctx, submission.clientId);
+    }
   },
 });
 
