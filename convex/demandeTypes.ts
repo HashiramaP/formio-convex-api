@@ -91,7 +91,12 @@ export const attachDemandeToClient = mutation({
   handler: async (ctx, { clientId, demandeTypeId }) => {
     const dt = await ctx.db.get(demandeTypeId);
     if (!dt) throw new Error(`demandeType ${demandeTypeId} not found`);
-    await ctx.db.patch(clientId, { legalDocuments: dt.legalDocumentIds });
+    // Record the demande type too so the intake curation knows which firm
+    // config applies for this client (see getIntakeForClient).
+    await ctx.db.patch(clientId, {
+      legalDocuments: dt.legalDocumentIds,
+      demandeTypeId,
+    });
     return { clientId, legalDocumentIds: dt.legalDocumentIds, demandeName: dt.name };
   },
 });
@@ -120,6 +125,57 @@ export const createFirmDemandeType = mutation({
       slug,
     });
     return await ctx.db.get(id);
+  },
+});
+
+// Branch a demande type into a firm-owned, editable copy. Source can be a
+// canonical (Formio) template or another firm type. Copies the IMM bundle and
+// — so the branch is a true fork — any curation the firm already did on the
+// source (disabled questions + document overrides) onto the new id.
+export const branchDemandeType = mutation({
+  args: {
+    firmId: v.id("firms"),
+    sourceDemandeTypeId: v.id("demandeTypes"),
+  },
+  handler: async (ctx, { firmId, sourceDemandeTypeId }) => {
+    await requireFirmAccess(ctx, firmId);
+    const src = await ctx.db.get(sourceDemandeTypeId);
+    if (!src) throw new Error("source demandeType not found");
+
+    const name = `${src.name} (copie)`;
+    const base = `${slugify(name)}-${firmId}`;
+    const existing = await ctx.db
+      .query("demandeTypes")
+      .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+      .collect();
+    let slug = base;
+    let n = 1;
+    while (existing.some((e) => e.slug === slug)) slug = `${base}-${n++}`;
+
+    const newId = await ctx.db.insert("demandeTypes", {
+      firmId,
+      name,
+      slug,
+      legalDocumentIds: src.legalDocumentIds,
+      description: src.description,
+    });
+
+    // Carry over the firm's curation for the source id, if any.
+    const firm = await ctx.db.get(firmId);
+    if (firm) {
+      const disabled = firm.intakeDisabledFields ?? {};
+      const docs = firm.requiredDocOverrides ?? {};
+      const patch: Record<string, unknown> = {};
+      if (disabled[sourceDemandeTypeId]) {
+        patch.intakeDisabledFields = { ...disabled, [newId]: disabled[sourceDemandeTypeId] };
+      }
+      if (docs[sourceDemandeTypeId]) {
+        patch.requiredDocOverrides = { ...docs, [newId]: docs[sourceDemandeTypeId] };
+      }
+      if (Object.keys(patch).length > 0) await ctx.db.patch(firmId, patch);
+    }
+
+    return newId;
   },
 });
 

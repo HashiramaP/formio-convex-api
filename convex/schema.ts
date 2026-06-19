@@ -35,6 +35,89 @@ export default defineSchema({
     // substituted at download time. Unset/empty = default naming. Opt-in: the
     // feature is inert until a firm configures a template.
     documentNamingTemplate: v.optional(v.string()),
+    // Intake curation — per demande type, the externalIds the firm chose NOT to
+    // ask the client (everything else is asked). Keyed by demandeTypeId. Absent
+    // type / absent id = asked. See INTAKE-CURATION-PLAN.md.
+    intakeDisabledFields: v.optional(
+      v.record(v.string(), v.array(v.string())),
+    ),
+    // Intake curation — per demande type, document add/remove overrides on top
+    // of the IMM-derived required-document list. `removed` drops a doc key the
+    // IMMs declared; `added` appends one (from the `documents` catalog, or a
+    // `custom` firm-defined label with no OCR). Keyed by demandeTypeId.
+    requiredDocOverrides: v.optional(
+      v.record(
+        v.string(),
+        v.object({
+          removed: v.array(v.string()),
+          added: v.array(
+            v.object({
+              key: v.string(),
+              label: v.optional(v.string()),
+              required: v.optional(v.boolean()),
+              custom: v.optional(v.boolean()),
+            }),
+          ),
+        }),
+      ),
+    ),
+    // Intake curation — per demande type, edits to the QUESTIONS (composition,
+    // never definition of a mapped field). `labels`: reword a question's display
+    // text only (externalId/type/mapping unchanged). `required`: per-question
+    // required override. `added`: questions added on top of the IMM union —
+    // either a canonical catalog question (custom=false, externalId is real) or
+    // a firm-defined informational question (custom=true, never feeds a PDF).
+    intakeQuestionOverrides: v.optional(
+      v.record(
+        v.string(),
+        v.object({
+          labels: v.optional(v.record(v.string(), v.string())),
+          required: v.optional(v.record(v.string(), v.boolean())),
+          added: v.optional(
+            v.array(
+              v.object({
+                externalId: v.string(),
+                custom: v.optional(v.boolean()),
+                label: v.optional(v.string()),
+                type: v.optional(v.string()),
+                options: v.optional(v.any()),
+                required: v.optional(v.boolean()),
+              }),
+            ),
+          ),
+          // Firm's custom ordering for this demande type — the full list of
+          // externalIds in the desired order. Questions not listed keep their
+          // default (category) position, appended after. Applied by the wizard.
+          order: v.optional(v.array(v.string())),
+          // Per-question conditional visibility override, keyed by externalId.
+          // Shape mirrors a question's dependsOn ({questionId, value} single,
+          // value array for multi-value, or array of conditions for OR). When
+          // set, it overrides the effective dependsOn for THIS demande type.
+          dependsOn: v.optional(v.record(v.string(), v.any())),
+          // Sparse per-question guidance overrides: only the fields the firm
+          // actually reworded are stored; everything else falls back to the
+          // canonical Formio text. Keyed by externalId. The wizard renders the
+          // merged result (catalog ⊕ guidance). Never mutates the canonical row.
+          guidance: v.optional(
+            v.record(
+              v.string(),
+              v.object({
+                shortLabel: v.optional(v.string()),
+                label: v.optional(v.string()),
+                indication: v.optional(v.string()),
+                example: v.optional(v.string()),
+                help: v.optional(v.string()),
+                placeholder: v.optional(v.string()),
+                whyImportantReason: v.optional(v.string()),
+                whyImportantConsequence: v.optional(v.string()),
+                successMessage: v.optional(v.string()),
+                options: v.optional(v.any()),
+              }),
+            ),
+          ),
+        }),
+      ),
+    ),
   })
     .index("by_workosUserId", ["workosUserId"])
     .index("by_pendingEmail", ["pendingEmail"])
@@ -56,6 +139,14 @@ export default defineSchema({
     emailConsentAt: v.optional(v.number()),
     emailUnsubscribedAt: v.optional(v.number()),
     legacyId: v.optional(v.string()),
+    // Which demande type this client was created from (set by
+    // attachDemandeToClient). Drives which firm curation config applies. Unset
+    // = client assembled manually → no firm default → everything asked.
+    demandeTypeId: v.optional(v.id("demandeTypes")),
+    // Per-client intake overrides on top of the firm's per-demande-type
+    // default: externalId → "ask" (force-show) | "skip" (force-hide). Absent =
+    // follow the firm default. See INTAKE-CURATION-PLAN.md.
+    intakeFieldOverrides: v.optional(v.record(v.string(), v.string())),
   })
     .index("by_firm", ["firmId"])
     .index("by_firm_status", ["firmId", "status"])

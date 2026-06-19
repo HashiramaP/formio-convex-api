@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { requireFirmAccess } from "./auth";
+import { requireFirmAccess, requireClientAccess } from "./auth";
 
 // `getClient`, `getClientByLegacyId`, and `recordEmailConsent` are called by
 // form-website (anonymous) using the clientId from the URL. URL-as-token model:
@@ -21,6 +21,29 @@ export const getClient = query({
     }
 
     return { ...client, formDefinitionName, formDefinitionLanguage };
+  },
+});
+
+// Intake curation — per-client override of one intake field on top of the
+// firm's per-demande-type default. state "ask" force-shows, "skip" force-hides,
+// "default" clears the override (follow the firm default again).
+export const setIntakeFieldOverride = mutation({
+  args: {
+    clientId: v.id("clients"),
+    externalId: v.string(),
+    state: v.union(v.literal("ask"), v.literal("skip"), v.literal("default")),
+  },
+  handler: async (ctx, { clientId, externalId, state }) => {
+    await requireClientAccess(ctx, clientId);
+    const client = await ctx.db.get(clientId);
+    if (!client) return;
+    const overrides = { ...(client.intakeFieldOverrides ?? {}) };
+    if (state === "default") {
+      delete overrides[externalId];
+    } else {
+      overrides[externalId] = state;
+    }
+    await ctx.db.patch(clientId, { intakeFieldOverrides: overrides });
   },
 });
 
