@@ -525,6 +525,7 @@ type QuestionOverride = {
   guidance?: Record<string, Record<string, unknown>>;
   dependsOn?: Record<string, unknown>;
   order?: string[];
+  ocrFill?: Record<string, { docKey: string }>;
   added?: Array<{
     externalId: string;
     custom?: boolean;
@@ -661,6 +662,64 @@ function applyQuestionOrder(questions: any[], order: string[] | undefined) {
   });
 }
 
+// Inject firm OCR-fill wiring. Each entry {externalId → {docKey}} attaches a
+// question to a document: the question itself becomes a new extracted field.
+// At query time we (1) add a fill (sourceKey = externalId → fills the question)
+// and (2) augment that document's OCR prompt with an instruction to extract the
+// question (using its label). Scoped to this demande type — the canonical
+// documents row is never modified. This lets firms add new extractable fields
+// just by attaching a question to a document.
+function applyOcrFillOverrides(
+  documents: any[],
+  ocrFill: Record<string, { docKey: string }> | undefined,
+  labelOf: (externalId: string) => string,
+) {
+  if (!ocrFill || Object.keys(ocrFill).length === 0) return documents;
+  const byDoc = new Map<string, string[]>(); // docKey → externalIds
+  for (const [externalId, f] of Object.entries(ocrFill)) {
+    if (!byDoc.has(f.docKey)) byDoc.set(f.docKey, []);
+    byDoc.get(f.docKey)!.push(externalId);
+  }
+  return documents.map((d) => {
+    const exts = byDoc.get(d.key);
+    if (!exts) return d;
+    const existingCat = d.catalog as any | null;
+    const existing = (existingCat?.fills ?? []) as any[];
+    const have = new Set(existing.map((f) => f.externalId));
+    const fresh = exts.filter((e) => !have.has(e));
+    if (fresh.length === 0) return d;
+
+    const extraFills = fresh.map((ext) => ({
+      sourceKey: ext, // Gemini returns this key (named after the question)
+      externalId: ext,
+      displayLabel: labelOf(ext),
+      firmAdded: true,
+    }));
+    const docName = d.label ?? existingCat?.name ?? d.key;
+    // Custom docs have no OCR config — synthesize a minimal one so the question
+    // drives extraction. Known catalog docs keep their tailored prompt.
+    const basePrompt =
+      existingCat?.prompt ?? `Examine cette image de document (« ${docName} »).`;
+    const lines = fresh.map((ext) => `- "${ext}": ${labelOf(ext)}`).join("\n");
+    const augmentedPrompt =
+      basePrompt +
+      `\n\nEn plus, si le document contient ces renseignements, extrais-les et ` +
+      `réponds avec EXACTEMENT ces clés JSON (valeur null si absent du document) :\n${lines}`;
+
+    const baseCat =
+      existingCat ?? {
+        key: d.key,
+        name: docName,
+        expectedDocumentType: docName,
+        skipNameVerification: true, // a custom doc isn't tied to the applicant's name
+      };
+    return {
+      ...d,
+      catalog: { ...baseCat, prompt: augmentedPrompt, fills: [...existing, ...extraFills] },
+    };
+  });
+}
+
 // Dynamic intake generator — given a client, computes the union of intake
 // questions and required documents from every IMM in their
 // `clients.legalDocuments[]`, then filters out questions the firm/client
@@ -714,11 +773,14 @@ export const getIntakeForClient = query({
     const docOverride = demandeTypeId
       ? (firm?.requiredDocOverrides?.[demandeTypeId] as DocOverride | undefined)
       : undefined;
-    const effectiveDocuments = await applyDocOverrides(
-      ctx,
-      enrichedDocuments,
-      docOverride,
-      client.firmId,
+    const labelOf = (ext: string) => {
+      const q = shownQuestions.find((x: any) => x.externalId === ext);
+      return (q?.catalog?.label ?? q?.catalog?.shortLabel ?? ext) as string;
+    };
+    const effectiveDocuments = applyOcrFillOverrides(
+      await applyDocOverrides(ctx, enrichedDocuments, docOverride, client.firmId),
+      qOverride?.ocrFill,
+      labelOf,
     );
 
     // Intake-reduction funnel — computed on the questions the client actually
@@ -839,15 +901,52 @@ export const getIntakeCatalogForDemandeType = query({
       }),
     );
 
+    // Effective documents = IMM-derived + firm add/remove overrides (so a
+    // document added in the ③ tab is usable as an OCR source here too).
+    const effectiveDocsForOcr = await applyDocOverrides(
+      ctx,
+      enrichedDocuments,
+      docOverride,
+      firmId,
+    );
+    // Inject firm OCR-fill wiring so the indicator reflects firm-added fills too.
+    const labelOf = (ext: string) => {
+      const q = questions.find((x: any) => x.externalId === ext);
+      return (q?.catalog?.label ?? q?.catalog?.shortLabel ?? ext) as string;
+    };
+    const docsWithOcr = applyOcrFillOverrides(effectiveDocsForOcr, qOverride?.ocrFill, labelOf);
+
+    // OCR auto-fill map: which question externalId is filled by which document.
+    // Read-only — surfaces "this question is auto-filled by [Passeport]".
+    const ocrFilledBy: Record<string, string> = {};
+    for (const d of docsWithOcr) {
+      const cat = d.catalog as { name?: string; fills?: Array<{ externalId?: string }> } | null;
+      const docName = d.label ?? cat?.name ?? d.key;
+      for (const f of cat?.fills ?? []) {
+        if (f.externalId && !ocrFilledBy[f.externalId]) ocrFilledBy[f.externalId] = docName;
+      }
+    }
+
+    // OCR sources: every document in the bundle — catalog OR custom (extraction
+    // is dynamic: the question's label is the instruction, and custom docs get a
+    // synthesized prompt). The picker just lists these documents.
+    const ocrSources = effectiveDocsForOcr.map((d) => ({
+      docKey: d.key as string,
+      docName: (d.label ?? (d.catalog as any)?.name ?? d.key) as string,
+    }));
+
     return {
       demandeType: { _id: dt._id, name: dt.name },
       questions,
+      ocrFilledBy,
+      ocrSources,
       questionOverride: {
         labels: qOverride?.labels ?? {},
         required: qOverride?.required ?? {},
         guidance: qOverride?.guidance ?? {},
         dependsOn: qOverride?.dependsOn ?? {},
         order: qOverride?.order ?? [],
+        ocrFill: qOverride?.ocrFill ?? {},
         added: qOverride?.added ?? [],
       },
       questionCatalog,

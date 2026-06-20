@@ -89,6 +89,15 @@ export default defineSchema({
           // externalIds in the desired order. Questions not listed keep their
           // default (category) position, appended after. Applied by the wizard.
           order: v.optional(v.array(v.string())),
+          // OCR auto-fill wiring: question externalId → the document that should
+          // extract & fill it. The question itself (its label) is the extraction
+          // instruction — at query time we add it to that document's effective
+          // fills AND augment its OCR prompt (scoped to this demande type; the
+          // canonical documents row is never modified). Lets firms add new
+          // extracted fields just by attaching a question to a document.
+          ocrFill: v.optional(
+            v.record(v.string(), v.object({ docKey: v.string() })),
+          ),
           // Per-question conditional visibility override, keyed by externalId.
           // Shape mirrors a question's dependsOn ({questionId, value} single,
           // value array for multi-value, or array of conditions for OR). When

@@ -417,6 +417,43 @@ export const setIntakeQuestionOrder = mutation({
   },
 });
 
+// Wire (or unwire) OCR auto-fill for one question in a demande type. `fill`
+// names the document + extracted source field that pre-fills the question;
+// null clears it. Prunes empty. Only meaningful for sourceKeys the document
+// already extracts (enforced by the UI menu, which lists extractable fields).
+export const setIntakeQuestionOcrFill = mutation({
+  args: {
+    firmId: v.id("firms"),
+    demandeTypeId: v.id("demandeTypes"),
+    externalId: v.string(),
+    fill: v.union(v.object({ docKey: v.string() }), v.null()),
+  },
+  handler: async (ctx, { firmId, demandeTypeId, externalId, fill }) => {
+    await requireFirmAccess(ctx, firmId);
+    const firm = await ctx.db.get(firmId);
+    if (!firm) return;
+    const all = { ...(firm.intakeQuestionOverrides ?? {}) };
+    const forType = { ...(all[demandeTypeId] ?? {}) };
+    const map = { ...((forType.ocrFill as Record<string, any>) ?? {}) };
+    if (fill === null) delete map[externalId];
+    else map[externalId] = fill;
+    if (Object.keys(map).length === 0) delete (forType as any).ocrFill;
+    else (forType as any).ocrFill = map;
+
+    const typeEmpty =
+      Object.keys(forType.labels ?? {}).length === 0 &&
+      Object.keys(forType.required ?? {}).length === 0 &&
+      (forType.added?.length ?? 0) === 0 &&
+      Object.keys((forType.guidance as Record<string, any>) ?? {}).length === 0 &&
+      Object.keys((forType.dependsOn as Record<string, any>) ?? {}).length === 0 &&
+      ((forType.order as string[] | undefined)?.length ?? 0) === 0 &&
+      Object.keys((forType.ocrFill as Record<string, any>) ?? {}).length === 0;
+    if (typeEmpty) delete all[demandeTypeId];
+    else all[demandeTypeId] = forType;
+    await ctx.db.patch(firmId, { intakeQuestionOverrides: all });
+  },
+});
+
 export const upsertEmailOverride = mutation({
   args: {
     firmId: v.id("firms"),

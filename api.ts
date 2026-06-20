@@ -610,6 +610,17 @@ export type PublicApiType = {
       },
       any
     >;
+    setIntakeQuestionOcrFill: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        externalId: string;
+        fill: { docKey: string } | null;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
     upsertEmailOverride: FunctionReference<
       "mutation",
       "public",
