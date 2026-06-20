@@ -758,16 +758,20 @@ export const getIntakeForClient = query({
       if (o === "skip") return true;
       return firmDisabled.has(ext);
     };
-    const visibleQuestions = finalQuestions.filter((q) => !isDisabled(q.externalId));
-
     // Question edits: reword/required-override + inject added (catalog/custom).
     const qOverride = demandeTypeId
       ? (firm?.intakeQuestionOverrides?.[demandeTypeId] as QuestionOverride | undefined)
       : undefined;
+    // Merge first (IMM questions relabeled + firm-added custom/catalog questions),
+    // THEN filter disabled — so a disabled CUSTOM question is dropped too (it's
+    // injected by applyQuestionOverrides, after the IMM list, so filtering the
+    // IMM list alone would miss it).
+    const mergedQuestions = await applyQuestionOverrides(ctx, finalQuestions, qOverride);
     const shownQuestions = applyQuestionOrder(
-      await applyQuestionOverrides(ctx, visibleQuestions, qOverride),
+      mergedQuestions.filter((q: any) => !isDisabled(q.externalId)),
       qOverride?.order,
     );
+    const disabledCount = mergedQuestions.length - shownQuestions.length;
 
     // Documents: apply the firm's per-demande-type add/remove overrides.
     const docOverride = demandeTypeId
@@ -802,7 +806,7 @@ export const getIntakeForClient = query({
       totalIntakeFields,
       uniqueAfterDedup: finalQuestions.length,
       dedupSaved: totalIntakeFields - finalQuestions.length,
-      disabledCount: finalQuestions.length - visibleQuestions.length,
+      disabledCount,
       ocrFillable: ocrFillable.size,
       conditional: conditional.size,
       minClientAnswers: shownQuestions.length - removable.size,
@@ -938,6 +942,9 @@ export const getIntakeCatalogForDemandeType = query({
     return {
       demandeType: { _id: dt._id, name: dt.name },
       questions,
+      // Raw disabled set (externalIds) so the editor seeds disabled state for
+      // ALL questions — IMM AND firm-added custom (which aren't in `questions`).
+      disabledExternalIds: [...firmDisabled],
       ocrFilledBy,
       ocrSources,
       questionOverride: {
