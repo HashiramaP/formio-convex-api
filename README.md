@@ -10,7 +10,7 @@ function change goes through here.
 ## Layout
 
 ```
-convex-api/
+formio-convex-api/
 ├── convex/           # Convex functions + schema (deployed by `convex dev`)
 │   ├── schema.ts
 │   ├── messages.ts   # example query + mutation

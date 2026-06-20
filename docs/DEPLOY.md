@@ -1,6 +1,6 @@
 # Deploy & data-ops runbook
 
-Detailed procedures, gotchas, and history for deploying `convex-api` and running
+Detailed procedures, gotchas, and history for deploying `formio-convex-api` and running
 data operations. `../CLAUDE.md` carries the short must-know summary and links
 here; `../README.md` has the baseline command reference. This file is the place
 for the blow-by-blow detail and dated incident history.
@@ -32,7 +32,7 @@ the process env. The reliable fix is to move `.env.local` aside for the command,
 with a `trap` so it's always restored even on failure:
 
 ```bash
-cd convex-api
+cd formio-convex-api
 trap "mv -f .env.local.bak .env.local 2>/dev/null && echo '[.env.local restored]'" EXIT
 mv .env.local .env.local.bak
 npm run deploy:prod
