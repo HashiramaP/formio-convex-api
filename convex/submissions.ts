@@ -3,6 +3,29 @@ import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireFirmAccess, requireSubmissionAccess } from "./auth";
 
+// Keep `clients.status` in sync with the client's submissions. Historically the
+// submission flow never patched it, so filtering by client.status stranded
+// submitted clients in "new". Derivation (matches the dashboard): submitted only
+// when every submission is submitted; in_progress if any is started; else new.
+async function syncClientStatus(
+  ctx: any,
+  clientId: import("./_generated/dataModel").Id<"clients"> | undefined,
+) {
+  if (!clientId) return;
+  const subs = await ctx.db
+    .query("submissions")
+    .withIndex("by_client", (q: any) => q.eq("clientId", clientId))
+    .collect();
+  let status = "new";
+  if (subs.length > 0) {
+    if (subs.every((s: any) => s.status === "submitted")) status = "submitted";
+    else if (subs.some((s: any) => s.status === "submitted" || s.status === "in_progress"))
+      status = "in_progress";
+  }
+  const client = await ctx.db.get(clientId);
+  if (client && client.status !== status) await ctx.db.patch(clientId, { status });
+}
+
 // Most submission functions are called by form-website (anonymous) using
 // submissionId from the URL. URL-as-token model: leave open. Dashboard-only
 // surfaces (listClientSubmissions, updateSubmissionFromDashboard,
@@ -113,6 +136,7 @@ export const initGroupedSubmissions = mutation({
         formType: f.formType,
       });
     }
+    await syncClientStatus(ctx, clientId);
 
     return { alreadyExists: false as const, groupId, submissions };
   },
@@ -185,6 +209,7 @@ export const initSubmission = mutation({
       metadata: {},
       preferredLanguage,
     });
+    await syncClientStatus(ctx, clientId);
 
     return {
       alreadySubmitted: false as const,
@@ -285,6 +310,7 @@ export const completeSubmission = mutation({
         submitted_at: new Date().toISOString(),
       },
     });
+    await syncClientStatus(ctx, submission.clientId);
 
     // Notify the firm out-of-band (case's notification profile, else the firm's
     // general email). Scheduled so a Resend failure never blocks the submission.
