@@ -23,6 +23,38 @@ export const getLegalDocumentsByIds = query({
   },
 });
 
+// The global canonical question universe — every distinct externalId any IMM's
+// intake uses, enriched with its catalog label + type. This is the mapping
+// target for the form-import audit: a firm's imported question maps to one of
+// these canonical concepts, so its answer can pre-fill any IMM that uses it —
+// independent of which IMMs are in the demande type.
+export const getCanonicalQuestionUniverse = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("legalDocuments").collect();
+    const ids = new Set<string>();
+    for (const ld of all) {
+      const m = ld.immQuestions as ImmIntakeMapping | undefined;
+      if (!m || !Array.isArray(m.intakeQuestions)) continue;
+      for (const q of m.intakeQuestions) if (q.externalId) ids.add(q.externalId);
+    }
+    const out = await Promise.all(
+      Array.from(ids).map(async (ext) => {
+        const c = await ctx.db
+          .query("questions")
+          .withIndex("by_externalId", (q) => q.eq("externalId", ext))
+          .first();
+        return {
+          externalId: ext,
+          label: (c?.shortLabel ?? c?.label ?? ext) as string,
+          type: (c?.type ?? "text") as string,
+        };
+      }),
+    );
+    return out;
+  },
+});
+
 export const listLegalDocuments = query({
   args: { language: v.optional(v.string()) },
   handler: async (ctx, { language }) => {

@@ -60,6 +60,24 @@ au moment de l'acquisition) ET la génération remplit les mauvais champs (casse
 2. Si le mapping tient → **exposer l'audit en lead magnet**.
 3. **Ensuite seulement** → câbler la génération (même mapping, déjà prouvé).
 
+## Modèle confirmé (2026-06-20) — découpler intake et génération
+Un type de demande = DEUX choses indépendantes :
+1. **Intake** (ce qu'on demande au client) : vient de la **form importée du cabinet**
+   (et/ou des questions IMM). Dans ① Formulaires inclus, on ajoute des IMM ET/OU des
+   **formulaires custom importés**. L'import vit DANS ① (pas un onglet audit séparé).
+2. **Cibles de génération** (quels IMM PDF se remplissent).
+
+**À CONSTRUIRE ENSUITE — ajouter un IMM SANS poser ses questions.** Ex : le cabinet
+garde sa form, mais ajoute un 5710 juste pour qu'il se remplisse. Les réponses de la
+form (mappées aux externalIds canoniques) remplissent le 5710 — aucune question IMM
+posée. ⇒ il faut **découpler** « ajouter un IMM comme cible de remplissage » de
+« poser les questions de cet IMM » (aujourd'hui c'est couplé : ajouter un IMM ajoute
+ses questions à l'intake). Un toggle par IMM : « poser ses questions au client ? ».
+
+**Mapping target = catalogue canonique GLOBAL** (les externalIds utilisés par les IMM,
+dédupliqués), PAS seulement les IMM du type. Comme ça le mapping marche même sans IMM,
+et les réponses pré-remplissent n'importe quel IMM ajouté ensuite (mêmes externalIds).
+
 ## Décision déjà prise
 Traiter ça comme **« un moteur de mapping, sorti d'abord en audit (acquisition), puis
 en génération (rétention) »**. Audit d'abord.

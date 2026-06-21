@@ -621,6 +621,21 @@ export type PublicApiType = {
       },
       any
     >;
+    applyImportedForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        documents: Array<{ docKey: string | null; label: string }>;
+        firmId: Id<"firms">;
+        questions: Array<{
+          externalId: string | null;
+          label: string;
+          type: string;
+        }>;
+      },
+      any
+    >;
     upsertEmailOverride: FunctionReference<
       "mutation",
       "public",
@@ -782,6 +797,12 @@ export type PublicApiType = {
       "query",
       "public",
       { ids: Array<Id<"legalDocuments">> },
+      any
+    >;
+    getCanonicalQuestionUniverse: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
       any
     >;
     listLegalDocuments: FunctionReference<
@@ -956,6 +977,12 @@ export type PublicApiType = {
       any
     >;
     getQuestionsByExternalIds: FunctionReference<
+      "query",
+      "public",
+      { externalIds: Array<string> },
+      any
+    >;
+    getGuidancePresence: FunctionReference<
       "query",
       "public",
       { externalIds: Array<string> },

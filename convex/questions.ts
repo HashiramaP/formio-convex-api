@@ -292,6 +292,30 @@ export const getQuestionsByExternalIds = query({
   },
 });
 
+// For each externalId, whether the canonical question already has meaningful
+// guidance (an indication or a "why important" reason). Used after a form import
+// to decide which applied questions need AI-generated guidance. A custom key
+// (not in the catalog) → false (always needs guidance). Returns a plain map.
+export const getGuidancePresence = query({
+  args: { externalIds: v.array(v.string()) },
+  handler: async (ctx, { externalIds }) => {
+    const out: Record<string, boolean> = {};
+    await Promise.all(
+      externalIds.map(async (id) => {
+        const q = await ctx.db
+          .query("questions")
+          .withIndex("by_externalId", (idx) => idx.eq("externalId", id))
+          .unique();
+        out[id] = !!(
+          (q?.indication && String(q.indication).trim()) ||
+          (q?.whyImportantReason && String(q.whyImportantReason).trim())
+        );
+      }),
+    );
+    return out;
+  },
+});
+
 /**
  * Bulk upsert questions by externalId. Used by the form editor to:
  * - Insert new template-based questions (id starts with "tpl_")

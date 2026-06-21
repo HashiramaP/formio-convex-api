@@ -454,6 +454,98 @@ export const setIntakeQuestionOcrFill = mutation({
   },
 });
 
+// Apply an imported (and AI-mapped) form to a demande type — turns the firm's
+// own form into the type's intake. For each question: a mapped one already in
+// the type's IMMs is relabeled with the firm's wording; a mapped one not yet
+// present is added (canonical → pre-fills IMMs); an unmapped one is added as a
+// custom info question. Documents map to the catalog or become custom. Merges
+// into the existing overrides (doesn't clobber other curation).
+export const applyImportedForm = mutation({
+  args: {
+    firmId: v.id("firms"),
+    demandeTypeId: v.id("demandeTypes"),
+    questions: v.array(
+      v.object({
+        externalId: v.union(v.string(), v.null()), // canonical match, or null
+        label: v.string(),
+        type: v.string(),
+      }),
+    ),
+    documents: v.array(
+      v.object({
+        docKey: v.union(v.string(), v.null()), // canonical doc key, or null
+        label: v.string(),
+      }),
+    ),
+  },
+  handler: async (ctx, { firmId, demandeTypeId, questions, documents }) => {
+    await requireFirmAccess(ctx, firmId);
+    const firm = await ctx.db.get(firmId);
+    const dt = await ctx.db.get(demandeTypeId);
+    if (!firm || !dt) return;
+
+    // externalIds the type's IMMs already ask (relabel vs add).
+    const present = new Set<string>();
+    for (const id of dt.legalDocumentIds) {
+      const ld = await ctx.db.get(id);
+      const m = (ld as any)?.immQuestions;
+      if (m?.intakeQuestions)
+        for (const q of m.intakeQuestions) if (q.externalId) present.add(q.externalId);
+    }
+    const slug = (s: string) =>
+      `custom:${s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 40)}`;
+
+    // ── Questions → intakeQuestionOverrides (merge) ──
+    const allQ = { ...(firm.intakeQuestionOverrides ?? {}) };
+    const ft: any = { ...(allQ[demandeTypeId] ?? {}) };
+    const labels: Record<string, string> = { ...(ft.labels ?? {}) };
+    const added: any[] = [...(ft.added ?? [])];
+    const addedIds = new Set(added.map((a) => a.externalId));
+    for (const q of questions) {
+      if (q.externalId) {
+        if (present.has(q.externalId)) {
+          labels[q.externalId] = q.label; // relabel the existing IMM question
+        } else if (!addedIds.has(q.externalId)) {
+          added.push({ externalId: q.externalId, custom: false, label: q.label });
+          addedIds.add(q.externalId);
+        }
+      } else {
+        const key = slug(q.label);
+        if (!addedIds.has(key)) {
+          added.push({ externalId: key, custom: true, label: q.label, type: q.type });
+          addedIds.add(key);
+        }
+      }
+    }
+    ft.labels = labels;
+    ft.added = added;
+    allQ[demandeTypeId] = ft;
+    await ctx.db.patch(firmId, { intakeQuestionOverrides: allQ });
+
+    // ── Documents → requiredDocOverrides (merge) ──
+    const allD = { ...(firm.requiredDocOverrides ?? {}) };
+    const prevD: any = allD[demandeTypeId] ?? {};
+    const dft: any = { removed: prevD.removed ?? [], added: prevD.added ?? [] };
+    const docAdded: any[] = [...(dft.added ?? [])];
+    const docKeys = new Set(docAdded.map((d) => d.key));
+    for (const d of documents) {
+      const key = d.docKey ?? slug(d.label);
+      if (docKeys.has(key)) continue;
+      docAdded.push(
+        d.docKey
+          ? { key: d.docKey, label: d.label, required: true }
+          : { key, label: d.label, required: true, custom: true },
+      );
+      docKeys.add(key);
+    }
+    dft.added = docAdded;
+    allD[demandeTypeId] = dft;
+    await ctx.db.patch(firmId, { requiredDocOverrides: allD });
+
+    return { questionsApplied: questions.length, documentsApplied: documents.length };
+  },
+});
+
 export const upsertEmailOverride = mutation({
   args: {
     firmId: v.id("firms"),
