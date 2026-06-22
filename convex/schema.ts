@@ -85,6 +85,10 @@ export default defineSchema({
                 label: v.optional(v.string()),
                 type: v.optional(v.string()),
                 options: v.optional(v.any()),
+                // Sub-field config for `type: "multi-entry"` custom questions
+                // (key/label/type per column). Free-form to mirror the wizard's
+                // MultiEntryFieldDef without coupling the schema to it.
+                multiEntryFields: v.optional(v.any()),
                 required: v.optional(v.boolean()),
               }),
             ),
@@ -375,6 +379,26 @@ export default defineSchema({
   })
     .index("by_firm", ["firmId"])
     .index("by_firm_batch", ["firmId", "batchId"]),
+
+  // A firm's imported intake form, stored as its MAPPING only (no file kept).
+  // Reusable: apply it as the intake of any demande type without re-uploading.
+  importedForms: defineTable({
+    firmId: v.id("firms"),
+    name: v.string(),
+    questions: v.array(
+      v.object({
+        externalId: v.union(v.string(), v.null()), // canonical match, or null
+        label: v.string(),
+        type: v.string(),
+      }),
+    ),
+    documents: v.array(
+      v.object({
+        docKey: v.union(v.string(), v.null()), // canonical doc key, or null
+        label: v.string(),
+      }),
+    ),
+  }).index("by_firm", ["firmId"]),
 
   feedback: defineTable({
     type: v.string(),

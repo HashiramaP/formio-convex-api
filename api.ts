@@ -567,6 +567,7 @@ export type PublicApiType = {
           custom?: boolean;
           externalId: string;
           label?: string;
+          multiEntryFields?: any;
           options?: any;
           required?: boolean;
           type?: string;
@@ -645,6 +646,33 @@ export type PublicApiType = {
           type: string;
         }>;
       },
+      any
+    >;
+    listImportedForms: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    saveImportedForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        documents: Array<{ docKey: string | null; label: string }>;
+        firmId: Id<"firms">;
+        name: string;
+        questions: Array<{
+          externalId: string | null;
+          label: string;
+          type: string;
+        }>;
+      },
+      any
+    >;
+    deleteImportedForm: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; formId: Id<"importedForms"> },
       any
     >;
     upsertEmailOverride: FunctionReference<

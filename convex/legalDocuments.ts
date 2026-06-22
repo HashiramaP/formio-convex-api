@@ -571,6 +571,7 @@ type QuestionOverride = {
     label?: string;
     type?: string;
     options?: unknown;
+    multiEntryFields?: unknown;
     required?: boolean;
   }>;
 };
@@ -653,6 +654,7 @@ async function applyQuestionOverrides(
         shortLabel: a.label ?? a.externalId,
         type: a.type ?? "text",
         options: a.options ?? undefined,
+        multiEntryFields: a.multiEntryFields ?? undefined,
         isRequired: !!a.required,
       };
       out.push({

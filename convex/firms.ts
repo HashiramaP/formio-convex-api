@@ -290,6 +290,7 @@ export const setIntakeQuestionOverrides = mutation({
         label: v.optional(v.string()),
         type: v.optional(v.string()),
         options: v.optional(v.any()),
+        multiEntryFields: v.optional(v.any()),
         required: v.optional(v.boolean()),
       }),
     ),
@@ -299,14 +300,20 @@ export const setIntakeQuestionOverrides = mutation({
     const firm = await ctx.db.get(firmId);
     if (!firm) return;
     const map = { ...(firm.intakeQuestionOverrides ?? {}) };
+    // Preserve the other override channels (guidance, order, ocrFill, dependsOn)
+    // which are written by their own mutations — this one only owns labels /
+    // required / added, so spreading the previous entry avoids wiping them.
+    const prev = (map[demandeTypeId] ?? {}) as Record<string, unknown>;
+    const hasOtherChannels =
+      !!prev.guidance || !!prev.order || !!prev.ocrFill || !!prev.dependsOn;
     const empty =
       Object.keys(labels).length === 0 &&
       Object.keys(required).length === 0 &&
       added.length === 0;
-    if (empty) {
+    if (empty && !hasOtherChannels) {
       delete map[demandeTypeId];
     } else {
-      map[demandeTypeId] = { labels, required, added };
+      map[demandeTypeId] = { ...prev, labels, required, added };
     }
     await ctx.db.patch(firmId, { intakeQuestionOverrides: map });
   },
@@ -577,6 +584,59 @@ export const applyImportedForm = mutation({
     await ctx.db.patch(firmId, { requiredDocOverrides: allD });
 
     return { questionsApplied: questions.length, documentsApplied: documents.length };
+  },
+});
+
+// ── Imported form library (mapping only — the uploaded file is never kept) ──
+
+export const listImportedForms = query({
+  args: { firmId: v.id("firms") },
+  handler: async (ctx, { firmId }) => {
+    await requireFirmAccess(ctx, firmId);
+    const forms = await ctx.db
+      .query("importedForms")
+      .withIndex("by_firm", (q) => q.eq("firmId", firmId))
+      .collect();
+    // Most recent first.
+    return forms.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
+export const saveImportedForm = mutation({
+  args: {
+    firmId: v.id("firms"),
+    name: v.string(),
+    questions: v.array(
+      v.object({
+        externalId: v.union(v.string(), v.null()),
+        label: v.string(),
+        type: v.string(),
+      }),
+    ),
+    documents: v.array(
+      v.object({
+        docKey: v.union(v.string(), v.null()),
+        label: v.string(),
+      }),
+    ),
+  },
+  handler: async (ctx, { firmId, name, questions, documents }) => {
+    await requireFirmAccess(ctx, firmId);
+    return await ctx.db.insert("importedForms", {
+      firmId,
+      name: name.trim() || "Formulaire importé",
+      questions,
+      documents,
+    });
+  },
+});
+
+export const deleteImportedForm = mutation({
+  args: { firmId: v.id("firms"), formId: v.id("importedForms") },
+  handler: async (ctx, { firmId, formId }) => {
+    await requireFirmAccess(ctx, firmId);
+    const form = await ctx.db.get(formId);
+    if (form && form.firmId === firmId) await ctx.db.delete(formId);
   },
 });
 
