@@ -22,6 +22,8 @@ import type * as formDefinitions from "../formDefinitions.js";
 import type * as http from "../http.js";
 import type * as legalDocuments from "../legalDocuments.js";
 import type * as migrations from "../migrations.js";
+import type * as notificationProfiles from "../notificationProfiles.js";
+import type * as notifications from "../notifications.js";
 import type * as questionTemplates from "../questionTemplates.js";
 import type * as questions from "../questions.js";
 import type * as submissionDocuments from "../submissionDocuments.js";
@@ -50,6 +52,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   legalDocuments: typeof legalDocuments;
   migrations: typeof migrations;
+  notificationProfiles: typeof notificationProfiles;
+  notifications: typeof notifications;
   questionTemplates: typeof questionTemplates;
   questions: typeof questions;
   submissionDocuments: typeof submissionDocuments;

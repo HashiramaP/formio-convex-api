@@ -1,0 +1,1156 @@
+{
+ "questions": [
+  {
+   "externalId": "visaType",
+   "label": "Quel type de visa demandez-vous ?",
+   "type": "select",
+   "isRequired": true,
+   "options": [
+    {
+     "code": "visa_de_visiteur",
+     "name": "Visa de visiteur"
+    },
+    {
+     "code": "transit",
+     "name": "Transit"
+    }
+   ]
+  },
+  {
+   "externalId": "applicationCountrySameAsResidence",
+   "label": "Le pays ou territoire où vous présentez votre demande est-il le même que votre pays de résidence actuel ?",
+   "type": "yes-no",
+   "isRequired": true
+  },
+  {
+   "externalId": "applicationCountry",
+   "label": "Dans quel pays ou territoire présentez-vous votre demande ?",
+   "type": "select",
+   "isRequired": false,
+   "options": [
+    {
+     "code": "acores",
+     "name": "Açores"
+    },
+    {
+     "code": "afghanistan",
+     "name": "Afghanistan"
+    },
+    {
+     "code": "afrique_du_sud_republique_d",
+     "name": "Afrique du Sud, République d'"
+    },
+    {
+     "code": "albanie",
+     "name": "Albanie"
+    },
+    {
+     "code": "algerie",
+     "name": "Algérie"
+    },
+    {
+     "code": "allemagne_rep_federale_d",
+     "name": "Allemagne, Rép Fédérale D'"
+    },
+    {
+     "code": "andorre",
+     "name": "Andorre"
+    },
+    {
+     "code": "angleterre",
+     "name": "Angleterre"
+    },
+    {
+     "code": "anglo_normandes_iles",
+     "name": "Anglo-Normandes, Îles"
+    },
+    {
+     "code": "angola",
+     "name": "Angola"
+    },
+    {
+     "code": "anguilla",
+     "name": "Anguilla"
+    },
+    {
+     "code": "antigua_et_barbuda",
+     "name": "Antigua-et-Barbuda"
+    },
+    {
+     "code": "antilles_neerlandaises_les",
+     "name": "Antilles néerlandaises, Les"
+    },
+    {
+     "code": "arabie_saoudite",
+     "name": "Arabie saoudite"
+    },
+    {
+     "code": "argentine",
+     "name": "Argentine"
+    },
+    {
+     "code": "armenie",
+     "name": "Arménie"
+    },
+    {
+     "code": "aruba",
+     "name": "Aruba"
+    },
+    {
+     "code": "australie",
+     "name": "Australie"
+    },
+    {
+     "code": "autorite_palestinienne",
+     "name": "Autorité palestinienne"
+    },
+    {
+     "code": "autriche",
+     "name": "Autriche"
+    },
+    {
+     "code": "azerbaidjan",
+     "name": "Azerbaïdjan"
+    },
+    {
+     "code": "bahamas",
+     "name": "Bahamas"
+    },
+    {
+     "code": "bahrein",
+     "name": "Bahreïn"
+    },
+    {
+     "code": "bangladesh",
+     "name": "Bangladesh"
+    },
+    {
+     "code": "barbade",
+     "name": "Barbade"
+    },
+    {
+     "code": "belgique",
+     "name": "Belgique"
+    },
+    {
+     "code": "belize",
+     "name": "Bélize"
+    },
+    {
+     "code": "benin",
+     "name": "Bénin"
+    },
+    {
+     "code": "bermudes",
+     "name": "Bermudes"
+    },
+    {
+     "code": "bhoutan",
+     "name": "Bhoutan"
+    },
+    {
+     "code": "bielorussie_belarus",
+     "name": "Biélorussie (Bélarus)"
+    },
+    {
+     "code": "birmanie_myanmar",
+     "name": "Birmanie (Myanmar)"
+    },
+    {
+     "code": "bolivie",
+     "name": "Bolivie"
+    },
+    {
+     "code": "bosnie_et_herzegovine",
+     "name": "Bosnie-et-Herzégovine"
+    },
+    {
+     "code": "botswana",
+     "name": "Botswana"
+    },
+    {
+     "code": "bresil",
+     "name": "Brésil"
+    },
+    {
+     "code": "brunei_darussalam",
+     "name": "Brunéi Darussalam"
+    },
+    {
+     "code": "bulgarie",
+     "name": "Bulgarie"
+    },
+    {
+     "code": "burkina_faso",
+     "name": "Burkina Faso"
+    },
+    {
+     "code": "burundi",
+     "name": "Burundi"
+    },
+    {
+     "code": "cabo_verde",
+     "name": "Cabo Verde"
+    },
+    {
+     "code": "caimans_iles",
+     "name": "Caïmans, Îles"
+    },
+    {
+     "code": "cambodge",
+     "name": "Cambodge"
+    },
+    {
+     "code": "cameroun",
+     "name": "Cameroun"
+    },
+    {
+     "code": "canada",
+     "name": "Canada"
+    },
+    {
+     "code": "canaries_iles",
+     "name": "Canaries, Îles"
+    },
+    {
+     "code": "centrafricaine_republique",
+     "name": "Centrafricaine, République"
+    },
+    {
+     "code": "chili",
+     "name": "Chili"
+    },
+    {
+     "code": "chine",
+     "name": "Chine"
+    },
+    {
+     "code": "chine_hong_kong_ras",
+     "name": "Chine (Hong Kong RAS)"
+    },
+    {
+     "code": "chine_macao_ras",
+     "name": "Chine (Macao RAS)"
+    },
+    {
+     "code": "chypre",
+     "name": "Chypre"
+    },
+    {
+     "code": "colombie",
+     "name": "Colombie"
+    },
+    {
+     "code": "comores",
+     "name": "Comores"
+    },
+    {
+     "code": "coree_nord_rpdc",
+     "name": "Corée, Nord (RPDC)"
+    },
+    {
+     "code": "coree_sud",
+     "name": "Corée, Sud"
+    },
+    {
+     "code": "costa_rica",
+     "name": "Costa Rica"
+    },
+    {
+     "code": "cote_d_ivoire",
+     "name": "Côte d'Ivoire"
+    },
+    {
+     "code": "croatie",
+     "name": "Croatie"
+    },
+    {
+     "code": "cuba",
+     "name": "Cuba"
+    },
+    {
+     "code": "danemark",
+     "name": "Danemark"
+    },
+    {
+     "code": "djibouti",
+     "name": "Djibouti"
+    },
+    {
+     "code": "dominique",
+     "name": "Dominique"
+    },
+    {
+     "code": "ecosse",
+     "name": "Écosse"
+    },
+    {
+     "code": "egypte",
+     "name": "Égypte"
+    },
+    {
+     "code": "el_salvador",
+     "name": "El Salvador"
+    },
+    {
+     "code": "emirats_arabes_unis",
+     "name": "Émirats arabes unis"
+    },
+    {
+     "code": "equateur",
+     "name": "Équateur"
+    },
+    {
+     "code": "espagne",
+     "name": "Espagne"
+    },
+    {
+     "code": "estonie",
+     "name": "Estonie"
+    },
+    {
+     "code": "etat_de_la_cite_du_vatican",
+     "name": "État de la Cité du Vatican"
+    },
+    {
+     "code": "etats_federes_de_micronesie",
+     "name": "États fédérés de Micronésie"
+    },
+    {
+     "code": "etats_unis_d_amerique",
+     "name": "États-Unis d'Amérique"
+    },
+    {
+     "code": "ethiopie",
+     "name": "Éthiopie"
+    },
+    {
+     "code": "fidji",
+     "name": "Fidji"
+    },
+    {
+     "code": "finlande",
+     "name": "Finlande"
+    },
+    {
+     "code": "france",
+     "name": "France"
+    },
+    {
+     "code": "gabon",
+     "name": "Gabon"
+    },
+    {
+     "code": "galles_pays_de",
+     "name": "Galles, Pays De"
+    },
+    {
+     "code": "gambie",
+     "name": "Gambie"
+    },
+    {
+     "code": "georgie",
+     "name": "Géorgie"
+    },
+    {
+     "code": "ghana",
+     "name": "Ghana"
+    },
+    {
+     "code": "gibraltar",
+     "name": "Gibraltar"
+    },
+    {
+     "code": "grece",
+     "name": "Grèce"
+    },
+    {
+     "code": "grenade_la",
+     "name": "Grenade, La"
+    },
+    {
+     "code": "groenland",
+     "name": "Groenland"
+    },
+    {
+     "code": "guadeloupe",
+     "name": "Guadeloupe"
+    },
+    {
+     "code": "guam",
+     "name": "Guam"
+    },
+    {
+     "code": "guatemala",
+     "name": "Guatémala"
+    },
+    {
+     "code": "guinee",
+     "name": "Guinée"
+    },
+    {
+     "code": "guinee_equatoriale",
+     "name": "Guinée équatoriale"
+    },
+    {
+     "code": "guinee_bissau",
+     "name": "Guinée-Bissau"
+    },
+    {
+     "code": "guyana",
+     "name": "Guyana"
+    },
+    {
+     "code": "guyane_francaise",
+     "name": "Guyane française"
+    },
+    {
+     "code": "haiti",
+     "name": "Haïti"
+    },
+    {
+     "code": "honduras",
+     "name": "Honduras"
+    },
+    {
+     "code": "hong_kong",
+     "name": "Hong Kong"
+    },
+    {
+     "code": "hongrie",
+     "name": "Hongrie"
+    },
+    {
+     "code": "ile_nieves",
+     "name": "Île Niévès"
+    },
+    {
+     "code": "iles_cook",
+     "name": "Îles Cook"
+    },
+    {
+     "code": "iles_malouines",
+     "name": "Îles Malouines"
+    },
+    {
+     "code": "iles_mariannes_du_nord",
+     "name": "Iles Mariannes du Nord"
+    },
+    {
+     "code": "iles_marshall",
+     "name": "Îles Marshall"
+    },
+    {
+     "code": "iles_pitcairn",
+     "name": "Îles Pitcairn"
+    },
+    {
+     "code": "iles_salomon",
+     "name": "Îles Salomon"
+    },
+    {
+     "code": "iles_turks_et_caiques",
+     "name": "Îles Turks et Caïques"
+    },
+    {
+     "code": "iles_vierges_britanniques",
+     "name": "Îles Vierges britanniques"
+    },
+    {
+     "code": "inconnu",
+     "name": "Inconnu"
+    },
+    {
+     "code": "inde",
+     "name": "Inde"
+    },
+    {
+     "code": "indonesie",
+     "name": "Indonésie"
+    },
+    {
+     "code": "iran",
+     "name": "Iran"
+    },
+    {
+     "code": "iraq",
+     "name": "Iraq"
+    },
+    {
+     "code": "irlande",
+     "name": "Irlande"
+    },
+    {
+     "code": "irlande_du_nord",
+     "name": "Irlande du Nord"
+    },
+    {
+     "code": "islande",
+     "name": "Islande"
+    },
+    {
+     "code": "israel",
+     "name": "Israël"
+    },
+    {
+     "code": "italie",
+     "name": "Italie"
+    },
+    {
+     "code": "jamaique",
+     "name": "Jamaïque"
+    },
+    {
+     "code": "japon",
+     "name": "Japon"
+    },
+    {
+     "code": "jordanie",
+     "name": "Jordanie"
+    },
+    {
+     "code": "kazakhstan",
+     "name": "Kazakhstan"
+    },
+    {
+     "code": "kenya",
+     "name": "Kenya"
+    },
+    {
+     "code": "kirghizistan",
+     "name": "Kirghizistan"
+    },
+    {
+     "code": "kiribati",
+     "name": "Kiribati"
+    },
+    {
+     "code": "kosovo",
+     "name": "Kosovo"
+    },
+    {
+     "code": "koweit",
+     "name": "Koweït"
+    },
+    {
+     "code": "laos",
+     "name": "Laos"
+    },
+    {
+     "code": "lesotho",
+     "name": "Lesotho"
+    },
+    {
+     "code": "lettonie",
+     "name": "Lettonie"
+    },
+    {
+     "code": "liban",
+     "name": "Liban"
+    },
+    {
+     "code": "liberia",
+     "name": "Libéria"
+    },
+    {
+     "code": "libye",
+     "name": "Libye"
+    },
+    {
+     "code": "liechtenstein",
+     "name": "Liechtenstein"
+    },
+    {
+     "code": "lituanie",
+     "name": "Lituanie"
+    },
+    {
+     "code": "luxembourg",
+     "name": "Luxembourg"
+    },
+    {
+     "code": "macao",
+     "name": "Macao"
+    },
+    {
+     "code": "macedoine",
+     "name": "Macédoine"
+    },
+    {
+     "code": "madagascar",
+     "name": "Madagascar"
+    },
+    {
+     "code": "madere",
+     "name": "Madère"
+    },
+    {
+     "code": "malawi",
+     "name": "Malawi"
+    },
+    {
+     "code": "malaysia",
+     "name": "Malaysia"
+    },
+    {
+     "code": "maldives",
+     "name": "Maldives"
+    },
+    {
+     "code": "mali",
+     "name": "Mali"
+    },
+    {
+     "code": "malte",
+     "name": "Malte"
+    },
+    {
+     "code": "maroc",
+     "name": "Maroc"
+    },
+    {
+     "code": "martinique",
+     "name": "Martinique"
+    },
+    {
+     "code": "maurice",
+     "name": "Maurice"
+    },
+    {
+     "code": "mauritanie",
+     "name": "Mauritanie"
+    },
+    {
+     "code": "mayotte",
+     "name": "Mayotte"
+    },
+    {
+     "code": "mexique",
+     "name": "Mexique"
+    },
+    {
+     "code": "moldavie",
+     "name": "Moldavie"
+    },
+    {
+     "code": "monaco",
+     "name": "Monaco"
+    },
+    {
+     "code": "mongolie",
+     "name": "Mongolie"
+    },
+    {
+     "code": "montenegro",
+     "name": "Monténégro"
+    },
+    {
+     "code": "montserrat",
+     "name": "Montserrat"
+    },
+    {
+     "code": "mozambique",
+     "name": "Mozambique"
+    },
+    {
+     "code": "namibie",
+     "name": "Namibie"
+    },
+    {
+     "code": "nauru",
+     "name": "Nauru"
+    },
+    {
+     "code": "nepal",
+     "name": "Népal"
+    },
+    {
+     "code": "nicaragua",
+     "name": "Nicaragua"
+    },
+    {
+     "code": "niger",
+     "name": "Niger"
+    },
+    {
+     "code": "nigeria",
+     "name": "Nigéria"
+    },
+    {
+     "code": "nord_vietnam",
+     "name": "Nord-Vietnam"
+    },
+    {
+     "code": "norvege",
+     "name": "Norvège"
+    },
+    {
+     "code": "nouvelle_caledonie",
+     "name": "Nouvelle-Calédonie"
+    },
+    {
+     "code": "nouvelle_zelande",
+     "name": "Nouvelle-Zélande"
+    },
+    {
+     "code": "oman",
+     "name": "Oman"
+    },
+    {
+     "code": "ouganda",
+     "name": "Ouganda"
+    },
+    {
+     "code": "ouzbekistan",
+     "name": "Ouzbékistan"
+    },
+    {
+     "code": "pakistan",
+     "name": "Pakistan"
+    },
+    {
+     "code": "panama",
+     "name": "Panama"
+    },
+    {
+     "code": "papouasie_nouvelle_guinee",
+     "name": "Papouasie-Nouvelle-Guinée"
+    },
+    {
+     "code": "paraguay",
+     "name": "Paraguay"
+    },
+    {
+     "code": "pays_bas_les",
+     "name": "Pays-Bas, Les"
+    },
+    {
+     "code": "perou",
+     "name": "Pérou"
+    },
+    {
+     "code": "philippines",
+     "name": "Philippines"
+    },
+    {
+     "code": "pologne",
+     "name": "Pologne"
+    },
+    {
+     "code": "polynesie_francaise",
+     "name": "Polynésie Française"
+    },
+    {
+     "code": "porto_rico",
+     "name": "Porto Rico"
+    },
+    {
+     "code": "portugal",
+     "name": "Portugal"
+    },
+    {
+     "code": "qatar",
+     "name": "Qatar"
+    },
+    {
+     "code": "rep_dem_du_congo",
+     "name": "Rép. Dém. du Congo"
+    },
+    {
+     "code": "republique_d_erythree",
+     "name": "République d' Erythrée"
+    },
+    {
+     "code": "republique_des_palaos",
+     "name": "République des Palaos"
+    },
+    {
+     "code": "republique_dominicaine",
+     "name": "République dominicaine"
+    },
+    {
+     "code": "republique_du_congo",
+     "name": "République du Congo"
+    },
+    {
+     "code": "reunion_la",
+     "name": "Réunion, La"
+    },
+    {
+     "code": "roumanie",
+     "name": "Roumanie"
+    },
+    {
+     "code": "russie",
+     "name": "Russie"
+    },
+    {
+     "code": "rwanda",
+     "name": "Rwanda"
+    },
+    {
+     "code": "sahara_occidental",
+     "name": "Sahara occidental"
+    },
+    {
+     "code": "sainte_helene",
+     "name": "Sainte-Hélène"
+    },
+    {
+     "code": "sainte_lucie",
+     "name": "Sainte-Lucie"
+    },
+    {
+     "code": "saint_kitts_et_nevis",
+     "name": "Saint-Kitts-et-Nevis"
+    },
+    {
+     "code": "saint_marin",
+     "name": "Saint-Marin"
+    },
+    {
+     "code": "saint_martin",
+     "name": "Saint-Martin"
+    },
+    {
+     "code": "saint_pierre_et_miquelon",
+     "name": "Saint-Pierre-et-Miquelon"
+    },
+    {
+     "code": "samoa",
+     "name": "Samoa"
+    },
+    {
+     "code": "samoa_americaines",
+     "name": "Samoa Américaines"
+    },
+    {
+     "code": "sao_tome_et_principe",
+     "name": "Sao Tomé-et-Principe"
+    },
+    {
+     "code": "senegal",
+     "name": "Sénégal"
+    },
+    {
+     "code": "serbie_republique_d",
+     "name": "Serbie, République d'"
+    },
+    {
+     "code": "seychelles",
+     "name": "Seychelles"
+    },
+    {
+     "code": "sierra_leone",
+     "name": "Sierra Leone"
+    },
+    {
+     "code": "singapour",
+     "name": "Singapour"
+    },
+    {
+     "code": "slovaquie",
+     "name": "Slovaquie"
+    },
+    {
+     "code": "slovenie",
+     "name": "Slovénie"
+    },
+    {
+     "code": "somalie",
+     "name": "Somalie"
+    },
+    {
+     "code": "soudan",
+     "name": "Soudan"
+    },
+    {
+     "code": "soudan_du_sud",
+     "name": "Soudan du Sud"
+    },
+    {
+     "code": "sri_lanka",
+     "name": "Sri Lanka"
+    },
+    {
+     "code": "st_vincent_et_les_grenadines",
+     "name": "St-Vincent-et-les Grenadines"
+    },
+    {
+     "code": "suede",
+     "name": "Suède"
+    },
+    {
+     "code": "suisse",
+     "name": "Suisse"
+    },
+    {
+     "code": "surinam",
+     "name": "Surinam"
+    },
+    {
+     "code": "swaziland",
+     "name": "Swaziland"
+    },
+    {
+     "code": "syrie",
+     "name": "Syrie"
+    },
+    {
+     "code": "tadjikistan",
+     "name": "Tadjikistan"
+    },
+    {
+     "code": "taiwan",
+     "name": "Taiwan"
+    },
+    {
+     "code": "tanzanie",
+     "name": "Tanzanie"
+    },
+    {
+     "code": "tchad",
+     "name": "Tchad"
+    },
+    {
+     "code": "tcheque_republique",
+     "name": "Tchèque, République"
+    },
+    {
+     "code": "ter_australes_et_antarctiques",
+     "name": "Ter. australes et antarctiques"
+    },
+    {
+     "code": "thailande",
+     "name": "Thaïlande"
+    },
+    {
+     "code": "timor_leste",
+     "name": "Timor-Leste"
+    },
+    {
+     "code": "togo",
+     "name": "Togo"
+    },
+    {
+     "code": "tonga",
+     "name": "Tonga"
+    },
+    {
+     "code": "trinite_et_tobago",
+     "name": "Trinité-et-Tobago"
+    },
+    {
+     "code": "tunisie",
+     "name": "Tunisie"
+    },
+    {
+     "code": "turkmenistan",
+     "name": "Turkménistan"
+    },
+    {
+     "code": "turquie",
+     "name": "Turquie"
+    },
+    {
+     "code": "tuvalu",
+     "name": "Tuvalu"
+    },
+    {
+     "code": "ukraine",
+     "name": "Ukraine"
+    },
+    {
+     "code": "uruguay",
+     "name": "Uruguay"
+    },
+    {
+     "code": "vanuatu",
+     "name": "Vanuatu"
+    },
+    {
+     "code": "venezuela",
+     "name": "Venezuela"
+    },
+    {
+     "code": "vierges_iles_americaines",
+     "name": "Vierges, Îles Americaines"
+    },
+    {
+     "code": "vietnam",
+     "name": "Vietnam"
+    },
+    {
+     "code": "wallis_et_futuna",
+     "name": "Wallis-et-Futuna"
+    },
+    {
+     "code": "yemen",
+     "name": "Yémen"
+    },
+    {
+     "code": "zambie",
+     "name": "Zambie"
+    },
+    {
+     "code": "zimbabwe",
+     "name": "Zimbabwe"
+    }
+   ]
+  },
+  {
+   "externalId": "applicationCountryStatus",
+   "label": "Quel est votre statut d’immigrant dans le pays où vous présentez votre demande ?",
+   "type": "select",
+   "isRequired": false,
+   "options": [
+    {
+     "code": "citoyen",
+     "name": "Citoyen"
+    },
+    {
+     "code": "resident_permanent",
+     "name": "Résident permanent"
+    },
+    {
+     "code": "visiteur",
+     "name": "Visiteur"
+    },
+    {
+     "code": "travailleur",
+     "name": "Travailleur"
+    },
+    {
+     "code": "etudiant",
+     "name": "Étudiant"
+    },
+    {
+     "code": "autre",
+     "name": "Autre"
+    },
+    {
+     "code": "personne_protegee",
+     "name": "Personne protégée"
+    },
+    {
+     "code": "demandeur_d_asile",
+     "name": "Demandeur d'asile"
+    },
+    {
+     "code": "etranger",
+     "name": "Étranger"
+    }
+   ]
+  },
+  {
+   "externalId": "applicationCountryStatusOther",
+   "label": "Précisez votre statut dans le pays où vous présentez votre demande (Autre).",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "applicationCountryStatusStart",
+   "label": "Date de début de votre statut dans le pays où vous présentez votre demande.",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "applicationCountryStatusEnd",
+   "label": "Date de fin de votre statut dans le pays où vous présentez votre demande.",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "visitPurpose",
+   "label": "Quel est l’objet de votre visite au Canada ?",
+   "type": "select",
+   "isRequired": true,
+   "options": [
+    {
+     "code": "affaires",
+     "name": "Affaires"
+    },
+    {
+     "code": "tourisme",
+     "name": "Tourisme"
+    },
+    {
+     "code": "etudes_a_court_terme",
+     "name": "Études à court terme"
+    },
+    {
+     "code": "etudiant_de_retour",
+     "name": "Étudiant de retour"
+    },
+    {
+     "code": "travailleur_de_retour",
+     "name": "Travailleur de retour"
+    },
+    {
+     "code": "super_visa_parents_ou_grands_parents",
+     "name": "Super visa : Parents ou grands-parents"
+    },
+    {
+     "code": "autre",
+     "name": "Autre"
+    },
+    {
+     "code": "visite_de_la_famille",
+     "name": "Visite de la famille"
+    },
+    {
+     "code": "visite",
+     "name": "Visite"
+    }
+   ]
+  },
+  {
+   "externalId": "visitPurposeOther",
+   "label": "Précisez l’objet de votre visite au Canada (Autre).",
+   "type": "text",
+   "isRequired": false
+  },
+  {
+   "externalId": "plannedArrivalDate",
+   "label": "Quelle est la date prévue de votre arrivée au Canada ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "plannedDepartureDate",
+   "label": "Quelle est la date prévue de votre départ du Canada ?",
+   "type": "date",
+   "isRequired": false
+  },
+  {
+   "externalId": "fundsAvailable",
+   "label": "De quels fonds disposez-vous pour votre séjour au Canada (en dollars canadiens) ?",
+   "type": "number",
+   "isRequired": false
+  },
+  {
+   "externalId": "hostsVisited",
+   "label": "Indiquez la ou les personnes ou institutions que vous visiterez au Canada.",
+   "type": "multi-entry",
+   "isRequired": false,
+   "multiEntryFields": [
+    {
+     "key": "name",
+     "label": "Nom",
+     "type": "text"
+    },
+    {
+     "key": "relationship",
+     "label": "Relation",
+     "type": "text"
+    },
+    {
+     "key": "address",
+     "label": "Adresse",
+     "type": "text"
+    }
+   ],
+   "multiEntryAddLabel": "Ajouter une personne / institution"
+  }
+ ]
+}

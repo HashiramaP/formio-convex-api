@@ -2,7 +2,9 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { requireFirmAccess, requireSubmissionAccess } from "./auth";
+import { computeClientIntakeSnapshot } from "./legalDocuments";
 
 /**
  * Recompute a client's pipeline status ("new" | "in_progress" | "submitted")
@@ -183,6 +185,7 @@ export const initGroupedSubmissions = mutation({
         formType: f.formType,
       });
     }
+    await recomputeClientStatus(ctx, clientId);
 
     return { alreadyExists: false as const, groupId, submissions };
   },
@@ -255,6 +258,7 @@ export const initSubmission = mutation({
       metadata: {},
       preferredLanguage,
     });
+    await recomputeClientStatus(ctx, clientId);
 
     return {
       alreadySubmitted: false as const,
@@ -361,18 +365,31 @@ export const completeSubmission = mutation({
     if (!submission) throw new Error("Submission not found");
 
     const metadata = (submission.metadata as Record<string, unknown>) ?? {};
+    // Freeze the intake questions the client saw, so the responses view never
+    // drifts if the demande type is edited later. Empty for legacy form clients.
+    const snapshot = submission.clientId
+      ? await computeClientIntakeSnapshot(ctx, submission.clientId)
+      : [];
     await ctx.db.patch(submissionId, {
       status: "submitted",
+      ...(snapshot.length > 0 ? { intakeSnapshot: snapshot } : {}),
       metadata: {
         ...metadata,
         started_at: startedAt ?? null,
         submitted_at: new Date().toISOString(),
       },
     });
-
     if (submission.clientId) {
       await recomputeClientStatus(ctx, submission.clientId);
     }
+
+    // Notify the firm out-of-band (case's notification profile, else the firm's
+    // general email). Scheduled so a Resend failure never blocks the submission.
+    await ctx.scheduler.runAfter(
+      0,
+      internal.notifications.sendSubmissionNotification,
+      { submissionId },
+    );
   },
 });
 

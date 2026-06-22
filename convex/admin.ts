@@ -39,6 +39,7 @@ export const updateFirm = mutation({
       subscriptionEndDate: v.optional(v.union(v.number(), v.null())),
       monthlyClientsRemaining: v.optional(v.union(v.number(), v.null())),
       monthlyClientLimit: v.optional(v.union(v.number(), v.null())),
+      notificationProfileLimit: v.optional(v.union(v.number(), v.null())),
       apiKey: v.optional(v.string()),
     }),
   },

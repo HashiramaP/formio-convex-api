@@ -24,6 +24,7 @@ export type PublicApiType = {
           membershipStatus?: string;
           monthlyClientLimit?: number | null;
           monthlyClientsRemaining?: number | null;
+          notificationProfileLimit?: number | null;
           subscriptionEndDate?: number | null;
           subscriptionStartDate?: number | null;
         };
@@ -168,6 +169,16 @@ export type PublicApiType = {
       { clientId: Id<"clients"> },
       any
     >;
+    setIntakeFieldOverride: FunctionReference<
+      "mutation",
+      "public",
+      {
+        clientId: Id<"clients">;
+        externalId: string;
+        state: "ask" | "skip" | "default";
+      },
+      any
+    >;
     getClientByLegacyId: FunctionReference<
       "query",
       "public",
@@ -195,7 +206,12 @@ export type PublicApiType = {
     insertClient: FunctionReference<
       "mutation",
       "public",
-      { firmId: Id<"firms">; firstName: string; lastName: string },
+      {
+        firmId: Id<"firms">;
+        firstName: string;
+        lastName: string;
+        notificationProfileId?: Id<"notificationProfiles">;
+      },
       any
     >;
     updateClient: FunctionReference<
@@ -210,6 +226,7 @@ export type PublicApiType = {
           lastName?: string;
           legalDocuments?: Array<Id<"legalDocuments">>;
           notes?: any;
+          notificationProfileId?: Id<"notificationProfiles"> | null;
           phoneNumber?: string;
           primaryFormDefinitionId?: Id<"formDefinitions">;
           status?: string;
@@ -272,6 +289,43 @@ export type PublicApiType = {
       "mutation",
       "public",
       { clientId: Id<"clients">; demandeTypeId: Id<"demandeTypes"> },
+      any
+    >;
+    createFirmDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      {
+        description?: string;
+        firmId: Id<"firms">;
+        legalDocumentIds: Array<Id<"legalDocuments">>;
+        name: string;
+      },
+      any
+    >;
+    branchDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; sourceDemandeTypeId: Id<"demandeTypes"> },
+      any
+    >;
+    updateFirmDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        firmId: Id<"firms">;
+        updates: {
+          description?: string;
+          legalDocumentIds?: Array<Id<"legalDocuments">>;
+          name?: string;
+        };
+      },
+      any
+    >;
+    deleteFirmDemandeType: FunctionReference<
+      "mutation",
+      "public",
+      { demandeTypeId: Id<"demandeTypes">; firmId: Id<"firms"> },
       any
     >;
   };
@@ -474,6 +528,165 @@ export type PublicApiType = {
       { firmId: Id<"firms"> },
       any
     >;
+    setDocumentNamingTemplate: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; template: string },
+      any
+    >;
+    setIntakeDisabledFields: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        externalIds: Array<string>;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
+    setRequiredDocOverrides: FunctionReference<
+      "mutation",
+      "public",
+      {
+        added: Array<{
+          custom?: boolean;
+          key: string;
+          label?: string;
+          required?: boolean;
+        }>;
+        demandeTypeId: Id<"demandeTypes">;
+        firmId: Id<"firms">;
+        removed: Array<string>;
+      },
+      any
+    >;
+    setRequiredDocDescription: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        description: string;
+        docKey: string;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
+    setIntakeQuestionOverrides: FunctionReference<
+      "mutation",
+      "public",
+      {
+        added: Array<{
+          custom?: boolean;
+          externalId: string;
+          label?: string;
+          multiEntryFields?: any;
+          options?: any;
+          required?: boolean;
+          type?: string;
+        }>;
+        demandeTypeId: Id<"demandeTypes">;
+        firmId: Id<"firms">;
+        labels: Record<string, string>;
+        required: Record<string, boolean>;
+      },
+      any
+    >;
+    setIntakeQuestionGuidance: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        externalId: string;
+        firmId: Id<"firms">;
+        patch: {
+          example?: string;
+          help?: string;
+          indication?: string;
+          label?: string;
+          options?: any;
+          placeholder?: string;
+          shortLabel?: string;
+          successMessage?: string;
+          whyImportantConsequence?: string;
+          whyImportantReason?: string;
+        };
+      },
+      any
+    >;
+    setIntakeQuestionDependsOn: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        dependsOn?: any;
+        externalId: string;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
+    setIntakeQuestionOrder: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        externalIds: Array<string>;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
+    setIntakeQuestionOcrFill: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        externalId: string;
+        fill: { docKey: string } | null;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
+    applyImportedForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        documents: Array<{ docKey: string | null; label: string }>;
+        firmId: Id<"firms">;
+        questions: Array<{
+          externalId: string | null;
+          label: string;
+          type: string;
+        }>;
+      },
+      any
+    >;
+    listImportedForms: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    saveImportedForm: FunctionReference<
+      "mutation",
+      "public",
+      {
+        documents: Array<{ docKey: string | null; label: string }>;
+        firmId: Id<"firms">;
+        name: string;
+        questions: Array<{
+          externalId: string | null;
+          label: string;
+          type: string;
+        }>;
+      },
+      any
+    >;
+    deleteImportedForm: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; formId: Id<"importedForms"> },
+      any
+    >;
     upsertEmailOverride: FunctionReference<
       "mutation",
       "public",
@@ -631,34 +844,16 @@ export type PublicApiType = {
     >;
   };
   legalDocuments: {
-    getLegalDocumentsByIds: FunctionReference<
-      "query",
+    attachLegalDocsForSpike: FunctionReference<
+      "mutation",
       "public",
-      { ids: Array<Id<"legalDocuments">> },
+      { clientId: Id<"clients">; legalDocuments: Array<Id<"legalDocuments">> },
       any
     >;
-    listLegalDocuments: FunctionReference<
+    buildFillJobPayload: FunctionReference<
       "query",
       "public",
-      { language?: string },
-      any
-    >;
-    listGeneratedDocsForClients: FunctionReference<
-      "query",
-      "public",
-      { clientIds: Array<Id<"clients">> },
-      any
-    >;
-    listGeneratedDocs: FunctionReference<
-      "query",
-      "public",
-      { clientId: Id<"clients"> },
-      any
-    >;
-    getGeneratedDocUrl: FunctionReference<
-      "query",
-      "public",
-      { storageId: Id<"_storage"> },
+      { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
     deleteGeneratedDoc: FunctionReference<
@@ -667,16 +862,64 @@ export type PublicApiType = {
       { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
+    getCanonicalQuestionUniverse: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getGeneratedDocUrl: FunctionReference<
+      "query",
+      "public",
+      { storageId: Id<"_storage"> },
+      any
+    >;
+    getIntakeCatalogForDemandeType: FunctionReference<
+      "query",
+      "public",
+      { demandeTypeId: Id<"demandeTypes">; firmId: Id<"firms"> },
+      any
+    >;
+    getIntakeForClient: FunctionReference<
+      "query",
+      "public",
+      { clientId: Id<"clients"> },
+      any
+    >;
+    getLegalDocumentsByIds: FunctionReference<
+      "query",
+      "public",
+      { ids: Array<Id<"legalDocuments">> },
+      any
+    >;
+    listGeneratedDocs: FunctionReference<
+      "query",
+      "public",
+      { clientId: Id<"clients"> },
+      any
+    >;
+    listGeneratedDocsForClients: FunctionReference<
+      "query",
+      "public",
+      { clientIds: Array<Id<"clients">> },
+      any
+    >;
+    listLegalDocuments: FunctionReference<
+      "query",
+      "public",
+      { language?: string },
+      any
+    >;
     setFieldMappings: FunctionReference<
       "mutation",
       "public",
       { fieldMappings: any; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
-    buildFillJobPayload: FunctionReference<
-      "query",
+    setImmQuestions: FunctionReference<
+      "mutation",
       "public",
-      { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
+      { immQuestions: any; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
     upsertGeneratedLegalDoc: FunctionReference<
@@ -690,22 +933,40 @@ export type PublicApiType = {
       },
       any
     >;
-    setImmQuestions: FunctionReference<
-      "mutation",
-      "public",
-      { immQuestions: any; legalDocumentId: Id<"legalDocuments"> },
-      any
-    >;
-    attachLegalDocsForSpike: FunctionReference<
-      "mutation",
-      "public",
-      { clientId: Id<"clients">; legalDocuments: Array<Id<"legalDocuments">> },
-      any
-    >;
-    getIntakeForClient: FunctionReference<
+  };
+  notificationProfiles: {
+    listNotificationProfiles: FunctionReference<
       "query",
       "public",
-      { clientId: Id<"clients"> },
+      { firmId: Id<"firms"> },
+      any
+    >;
+    getNotificationProfileLimit: FunctionReference<
+      "query",
+      "public",
+      { firmId: Id<"firms"> },
+      any
+    >;
+    createNotificationProfile: FunctionReference<
+      "mutation",
+      "public",
+      { email: string; firmId: Id<"firms">; name: string },
+      any
+    >;
+    updateNotificationProfile: FunctionReference<
+      "mutation",
+      "public",
+      {
+        firmId: Id<"firms">;
+        profileId: Id<"notificationProfiles">;
+        updates: { email?: string; name?: string };
+      },
+      any
+    >;
+    deleteNotificationProfile: FunctionReference<
+      "mutation",
+      "public",
+      { firmId: Id<"firms">; profileId: Id<"notificationProfiles"> },
       any
     >;
   };
@@ -760,7 +1021,19 @@ export type PublicApiType = {
       },
       any
     >;
+    setQuestionDependsOnBatch: FunctionReference<
+      "mutation",
+      "public",
+      { items: Array<{ dependsOn: any; externalId: string }> },
+      any
+    >;
     getQuestionsByExternalIds: FunctionReference<
+      "query",
+      "public",
+      { externalIds: Array<string> },
+      any
+    >;
+    getGuidancePresence: FunctionReference<
       "query",
       "public",
       { externalIds: Array<string> },
