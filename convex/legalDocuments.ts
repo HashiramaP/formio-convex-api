@@ -507,11 +507,13 @@ async function resolveDocCatalog(
 type DocOverride = {
   removed?: string[];
   added?: Array<{ key: string; label?: string; required?: boolean; custom?: boolean }>;
+  descriptions?: Record<string, string>;
 };
 
 // Apply a firm's per-demande-type document overrides to the IMM-derived base
 // list: drop `removed` keys, append `added` docs (catalog-enriched unless they
-// are `custom` firm-defined labels with no OCR config).
+// are `custom` firm-defined labels with no OCR config), and attach the firm's
+// per-doc `description` (shown under the doc name in the wizard).
 async function applyDocOverrides<T extends { key: string }>(
   ctx: QueryCtx,
   baseDocs: T[],
@@ -519,6 +521,7 @@ async function applyDocOverrides<T extends { key: string }>(
   firmId: Id<"firms"> | undefined,
 ) {
   const removed = new Set(override?.removed ?? []);
+  const descriptions = override?.descriptions ?? {};
   const docs: Array<Record<string, unknown>> = baseDocs.filter((d) => !removed.has(d.key));
   for (const a of override?.added ?? []) {
     if (docs.some((d) => d.key === a.key)) continue;
@@ -533,6 +536,10 @@ async function applyDocOverrides<T extends { key: string }>(
       custom: !!a.custom,
       added: true,
     });
+  }
+  for (const d of docs) {
+    const desc = descriptions[d.key as string];
+    if (desc) d.description = desc;
   }
   return docs;
 }
@@ -748,6 +755,56 @@ function applyOcrFillOverrides(
     return {
       ...d,
       catalog: { ...baseCat, prompt: augmentedPrompt, fills: [...existing, ...extraFills] },
+    };
+  });
+}
+
+// Compute a compact, denormalized snapshot of the questions a client's intake
+// currently shows — externalId + label + type + section + order + options. Run
+// the SAME pipeline as getIntakeForClient (union → merge overrides → filter
+// disabled → order) so the snapshot matches exactly what the client sees. Used
+// by completeSubmission to freeze the intake at submit time, so the responses
+// view never drifts when the demande type is edited afterward.
+export async function computeClientIntakeSnapshot(
+  ctx: QueryCtx,
+  clientId: Id<"clients">,
+): Promise<Array<Record<string, unknown>>> {
+  const client = await ctx.db.get(clientId);
+  if (!client) return [];
+  const legalDocIds = client.legalDocuments ?? [];
+  if (legalDocIds.length === 0 && !client.demandeTypeId) return [];
+
+  const { finalQuestions } = await buildIntakeUnion(ctx, legalDocIds, client.firmId);
+  const firm = client.firmId ? await ctx.db.get(client.firmId) : null;
+  const demandeTypeId = client.demandeTypeId;
+  const firmDisabled = new Set<string>(
+    demandeTypeId ? firm?.intakeDisabledFields?.[demandeTypeId] ?? [] : [],
+  );
+  const overrides = (client.intakeFieldOverrides ?? {}) as Record<string, string>;
+  const isDisabled = (ext: string) => {
+    const o = overrides[ext];
+    if (o === "ask") return false;
+    if (o === "skip") return true;
+    return firmDisabled.has(ext);
+  };
+  const qOverride = demandeTypeId
+    ? (firm?.intakeQuestionOverrides?.[demandeTypeId] as QuestionOverride | undefined)
+    : undefined;
+  const merged = await applyQuestionOverrides(ctx, finalQuestions, qOverride);
+  const shown = applyQuestionOrder(
+    merged.filter((q: any) => !isDisabled(q.externalId)),
+    qOverride?.order,
+  );
+  return shown.map((q: any) => {
+    const cat = q.catalog ?? {};
+    return {
+      externalId: q.externalId,
+      label: cat.shortLabel ?? cat.label ?? q.externalId,
+      type: cat.type ?? "text",
+      section: q.section ?? cat.section ?? "Autre",
+      options: cat.options ?? undefined,
+      multiEntryFields: cat.multiEntryFields ?? undefined,
+      dependsOn: q.dependsOn ?? undefined,
     };
   });
 }
@@ -996,7 +1053,11 @@ export const getIntakeCatalogForDemandeType = query({
         catalogName: (d.catalog as { name?: string } | null)?.name,
         missingFromCatalog: d.missingFromCatalog,
       })),
-      docOverride: { removed: docOverride.removed ?? [], added: docOverride.added ?? [] },
+      docOverride: {
+        removed: docOverride.removed ?? [],
+        added: docOverride.added ?? [],
+        descriptions: docOverride.descriptions ?? {},
+      },
       documentCatalog: Array.from(byKey.values()),
       imms: legalDocs
         .filter(Boolean)

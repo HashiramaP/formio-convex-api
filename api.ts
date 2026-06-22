@@ -548,6 +548,17 @@ export type PublicApiType = {
       },
       any
     >;
+    setRequiredDocDescription: FunctionReference<
+      "mutation",
+      "public",
+      {
+        demandeTypeId: Id<"demandeTypes">;
+        description: string;
+        docKey: string;
+        firmId: Id<"firms">;
+      },
+      any
+    >;
     setIntakeQuestionOverrides: FunctionReference<
       "mutation",
       "public",
@@ -793,40 +804,16 @@ export type PublicApiType = {
     >;
   };
   legalDocuments: {
-    getLegalDocumentsByIds: FunctionReference<
-      "query",
+    attachLegalDocsForSpike: FunctionReference<
+      "mutation",
       "public",
-      { ids: Array<Id<"legalDocuments">> },
+      { clientId: Id<"clients">; legalDocuments: Array<Id<"legalDocuments">> },
       any
     >;
-    getCanonicalQuestionUniverse: FunctionReference<
+    buildFillJobPayload: FunctionReference<
       "query",
       "public",
-      Record<string, never>,
-      any
-    >;
-    listLegalDocuments: FunctionReference<
-      "query",
-      "public",
-      { language?: string },
-      any
-    >;
-    listGeneratedDocsForClients: FunctionReference<
-      "query",
-      "public",
-      { clientIds: Array<Id<"clients">> },
-      any
-    >;
-    listGeneratedDocs: FunctionReference<
-      "query",
-      "public",
-      { clientId: Id<"clients"> },
-      any
-    >;
-    getGeneratedDocUrl: FunctionReference<
-      "query",
-      "public",
-      { storageId: Id<"_storage"> },
+      { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
     deleteGeneratedDoc: FunctionReference<
@@ -835,16 +822,64 @@ export type PublicApiType = {
       { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
+    getCanonicalQuestionUniverse: FunctionReference<
+      "query",
+      "public",
+      Record<string, never>,
+      any
+    >;
+    getGeneratedDocUrl: FunctionReference<
+      "query",
+      "public",
+      { storageId: Id<"_storage"> },
+      any
+    >;
+    getIntakeCatalogForDemandeType: FunctionReference<
+      "query",
+      "public",
+      { demandeTypeId: Id<"demandeTypes">; firmId: Id<"firms"> },
+      any
+    >;
+    getIntakeForClient: FunctionReference<
+      "query",
+      "public",
+      { clientId: Id<"clients"> },
+      any
+    >;
+    getLegalDocumentsByIds: FunctionReference<
+      "query",
+      "public",
+      { ids: Array<Id<"legalDocuments">> },
+      any
+    >;
+    listGeneratedDocs: FunctionReference<
+      "query",
+      "public",
+      { clientId: Id<"clients"> },
+      any
+    >;
+    listGeneratedDocsForClients: FunctionReference<
+      "query",
+      "public",
+      { clientIds: Array<Id<"clients">> },
+      any
+    >;
+    listLegalDocuments: FunctionReference<
+      "query",
+      "public",
+      { language?: string },
+      any
+    >;
     setFieldMappings: FunctionReference<
       "mutation",
       "public",
       { fieldMappings: any; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
-    buildFillJobPayload: FunctionReference<
-      "query",
+    setImmQuestions: FunctionReference<
+      "mutation",
       "public",
-      { clientId: Id<"clients">; legalDocumentId: Id<"legalDocuments"> },
+      { immQuestions: any; legalDocumentId: Id<"legalDocuments"> },
       any
     >;
     upsertGeneratedLegalDoc: FunctionReference<
@@ -856,30 +891,6 @@ export type PublicApiType = {
         status: string;
         storageId?: Id<"_storage">;
       },
-      any
-    >;
-    setImmQuestions: FunctionReference<
-      "mutation",
-      "public",
-      { immQuestions: any; legalDocumentId: Id<"legalDocuments"> },
-      any
-    >;
-    attachLegalDocsForSpike: FunctionReference<
-      "mutation",
-      "public",
-      { clientId: Id<"clients">; legalDocuments: Array<Id<"legalDocuments">> },
-      any
-    >;
-    getIntakeForClient: FunctionReference<
-      "query",
-      "public",
-      { clientId: Id<"clients"> },
-      any
-    >;
-    getIntakeCatalogForDemandeType: FunctionReference<
-      "query",
-      "public",
-      { demandeTypeId: Id<"demandeTypes">; firmId: Id<"firms"> },
       any
     >;
   };

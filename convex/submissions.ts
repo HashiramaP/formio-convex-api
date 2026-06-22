@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireFirmAccess, requireSubmissionAccess } from "./auth";
+import { computeClientIntakeSnapshot } from "./legalDocuments";
 
 // Keep `clients.status` in sync with the client's submissions. Historically the
 // submission flow never patched it, so filtering by client.status stranded
@@ -302,8 +303,14 @@ export const completeSubmission = mutation({
     if (!submission) throw new Error("Submission not found");
 
     const metadata = (submission.metadata as Record<string, unknown>) ?? {};
+    // Freeze the intake questions the client saw, so the responses view never
+    // drifts if the demande type is edited later. Empty for legacy form clients.
+    const snapshot = submission.clientId
+      ? await computeClientIntakeSnapshot(ctx, submission.clientId)
+      : [];
     await ctx.db.patch(submissionId, {
       status: "submitted",
+      ...(snapshot.length > 0 ? { intakeSnapshot: snapshot } : {}),
       metadata: {
         ...metadata,
         started_at: startedAt ?? null,

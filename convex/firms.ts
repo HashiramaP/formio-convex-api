@@ -231,11 +231,45 @@ export const setRequiredDocOverrides = mutation({
     const firm = await ctx.db.get(firmId);
     if (!firm) return;
     const map = { ...(firm.requiredDocOverrides ?? {}) };
-    if (removed.length === 0 && added.length === 0) {
+    // Preserve existing descriptions (managed by setRequiredDocDescription).
+    const prevDesc = (map[demandeTypeId] as any)?.descriptions;
+    if (removed.length === 0 && added.length === 0 && !prevDesc) {
       delete map[demandeTypeId];
     } else {
-      map[demandeTypeId] = { removed, added };
+      map[demandeTypeId] = { removed, added, ...(prevDesc ? { descriptions: prevDesc } : {}) };
     }
+    await ctx.db.patch(firmId, { requiredDocOverrides: map });
+  },
+});
+
+// Set (or clear) a document's short description for one demande type — shown
+// under the doc name in the wizard. Empty string clears it; prunes the entry
+// when empty. Never touches the canonical documents table.
+export const setRequiredDocDescription = mutation({
+  args: {
+    firmId: v.id("firms"),
+    demandeTypeId: v.id("demandeTypes"),
+    docKey: v.string(),
+    description: v.string(),
+  },
+  handler: async (ctx, { firmId, demandeTypeId, docKey, description }) => {
+    await requireFirmAccess(ctx, firmId);
+    const firm = await ctx.db.get(firmId);
+    if (!firm) return;
+    const map = { ...(firm.requiredDocOverrides ?? {}) };
+    const prev: any = map[demandeTypeId] ?? { removed: [], added: [] };
+    const desc = { ...(prev.descriptions ?? {}) };
+    const trimmed = description.trim();
+    if (trimmed) desc[docKey] = trimmed;
+    else delete desc[docKey];
+    const next: any = { removed: prev.removed ?? [], added: prev.added ?? [] };
+    if (Object.keys(desc).length > 0) next.descriptions = desc;
+    const empty =
+      (next.removed?.length ?? 0) === 0 &&
+      (next.added?.length ?? 0) === 0 &&
+      !next.descriptions;
+    if (empty) delete map[demandeTypeId];
+    else map[demandeTypeId] = next;
     await ctx.db.patch(firmId, { requiredDocOverrides: map });
   },
 });

@@ -58,6 +58,10 @@ export default defineSchema({
               custom: v.optional(v.boolean()),
             }),
           ),
+          // Per-document short description (what's accepted / format), shown
+          // under the doc name in the wizard. Keyed by doc key. AI-generated on
+          // add; firm can edit. Per demande type — canonical docs untouched.
+          descriptions: v.optional(v.record(v.string(), v.string())),
         }),
       ),
     ),
@@ -175,6 +179,10 @@ export default defineSchema({
     preferredLanguage: v.optional(v.string()),
     documentOnly: v.optional(v.boolean()),
     groupId: v.optional(v.string()),
+    // Frozen snapshot of the intake questions the client saw, captured at submit
+    // time (externalId/label/type/section/order). The responses view renders
+    // from this so it never drifts when the demande type is edited afterward.
+    intakeSnapshot: v.optional(v.any()),
   })
     .index("by_client", ["clientId"])
     .index("by_firm", ["firmId"])
